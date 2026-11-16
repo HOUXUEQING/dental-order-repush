@@ -76,8 +76,11 @@ tbody tr:hover{background:#fafbfc}
 .filter input:focus,.filter select:focus{border-color:#1677ff}
 .filter .sp{flex:1}
 .filter-label{color:#4e5969;font-size:13px;white-space:nowrap}
+.filter input.name{width:96px}
+.filter input.phone{width:126px}
+.filter input.date{width:138px}
 .table-wrap{overflow-x:auto}
-.table-wrap table{min-width:1380px}
+.table-wrap table{min-width:1660px}
 .mono{font-family:Consolas,Menlo,Monaco,monospace;font-size:12px;letter-spacing:-.2px}
 
 /* ---------- summary bar ---------- */
@@ -180,14 +183,22 @@ h3:first-child{margin-top:0}
             <div class="muted">接口监控告警自动进入 · 仅展示未同步成功的可推送订单状态</div>
           </div>
           <div class="filter">
-            <span class="filter-label">订单号：</span>
-            <input id="q" placeholder="业务公司单号 / 壹账通单号 / 服务商单号">
-            <select id="fp">
-              <option value="">全部业务公司</option>
-              <option value="华夏银行">华夏银行</option>
-              <option value="招商银行">招商银行</option>
-              <option value="平安银行">平安银行</option>
+            <span class="filter-label">订单编号</span>
+            <input id="q" placeholder="壹账通 / 业务公司 / 服务商单号">
+            <span class="filter-label">服务商</span>
+            <select id="fs">
+              <option value="">全部</option>
+              <option value="康恩斯瑞">康恩斯瑞</option>
+              <option value="瑞尔">瑞尔</option>
             </select>
+            <span class="filter-label">预约人姓名</span>
+            <input id="fname" class="name" placeholder="姓名">
+            <span class="filter-label">手机号</span>
+            <input id="fphone" class="phone" placeholder="手机号">
+            <span class="filter-label">下单时间</span>
+            <input id="fstart" class="date" type="date">
+            <span class="muted">至</span>
+            <input id="fend" class="date" type="date">
             <div class="sp"></div>
             <span class="muted">共 <b id="sync-count">0</b> 笔待处理</span>
           </div>
@@ -200,6 +211,8 @@ h3:first-child{margin-top:0}
                   <th style="width:142px">业务公司单号</th>
                   <th style="width:92px">服务商</th>
                   <th style="width:142px">服务商单号</th>
+                  <th style="width:90px">预约人姓名</th>
+                  <th style="width:112px">手机号</th>
                   <th style="width:92px">预约门店</th>
                   <th style="width:104px">最新订单状态</th>
                   <th style="width:150px">最早未成功订单状态</th>
@@ -357,7 +370,7 @@ const RISK = {
 
 const SEED = [
   {
-    id:'DD20261116001', partner:'华夏银行', supplier:'康护到家', partnerOrderNo:'HX202611160088', supplierOrderNo:'KH202611160001',
+    id:'DD20261116001', partner:'华夏银行', supplier:'康恩斯瑞', partnerOrderNo:'HX202611160088', supplierOrderNo:'KH202611160001', patient:'张伟', phone:'13812345678', createdAt:'2026-11-14 09:45',
     records:[
       {seq:1,status:'待确认',store:'朝阳门店',appoint:'—',changed:'11-16 09:50',push:false,result:'internal'},
       {seq:2,status:'已预约',store:'朝阳门店',appoint:'11-18 14:00',changed:'11-16 10:00',push:true,result:'success',pushTime:'11-16 10:00'},
@@ -368,7 +381,7 @@ const SEED = [
     ]
   },
   {
-    id:'DD20261116002', partner:'招商银行', supplier:'安康护理', partnerOrderNo:'ZS202611160231', supplierOrderNo:'AK202611160002',
+    id:'DD20261116002', partner:'招商银行', supplier:'瑞尔', partnerOrderNo:'ZS202611160231', supplierOrderNo:'AK202611160002', patient:'李静', phone:'13998765432', createdAt:'2026-11-15 09:10',
     records:[
       {seq:1,status:'待确认',store:'朝阳门店',appoint:'—',changed:'11-16 09:20',push:false,result:'internal'},
       {seq:2,status:'已预约',store:'朝阳门店',appoint:'11-17 09:00',changed:'11-16 09:30',push:true,result:'success',pushTime:'11-16 09:30'},
@@ -376,7 +389,7 @@ const SEED = [
     ]
   },
   {
-    id:'DD20261116003', partner:'平安银行', supplier:'颐养健康', partnerOrderNo:'PA202611160517', supplierOrderNo:'YY202611160003',
+    id:'DD20261116003', partner:'平安银行', supplier:'康恩斯瑞', partnerOrderNo:'PA202611160517', supplierOrderNo:'YY202611160003', patient:'王芳', phone:'13600001111', createdAt:'2026-11-16 08:30',
     records:[
       {seq:1,status:'待确认',store:'望京门店',appoint:'—',changed:'11-16 08:40',push:false,result:'internal'},
       {seq:2,status:'已预约',store:'望京门店',appoint:'11-20 15:00',changed:'11-16 09:00',push:true,result:'success',pushTime:'11-16 09:00'},
@@ -396,6 +409,14 @@ const $ = id => document.getElementById(id);
 const clone = o => JSON.parse(JSON.stringify(o));
 function failedOf(o){ return o.records.filter(r => r.push && r.result !== 'success'); }
 function latestOf(o){ return o.records[o.records.length - 1]; }
+function maskName(n){
+  if (!n) return '';
+  return n.charAt(0) + new Array(n.length).join('*');
+}
+function maskPhone(p){
+  if (!p) return '';
+  return p.slice(0, 3) + '****' + p.slice(-4);
+}
 function nowStr(){
   const d = new Date();
   const p = n => String(n).padStart(2, '0');
@@ -415,10 +436,22 @@ function toast(msg, type){
 /* ================= 列表 ================= */
 function renderList(){
   const q = ($('q').value || '').trim().toLowerCase();
-  const p = $('fp').value;
+  const fs = $('fs').value;
+  const fn = ($('fname').value || '').trim();
+  const fp = ($('fphone').value || '').trim();
+  const d1 = $('fstart').value;
+  const d2 = $('fend').value;
+
   const rows = orders.filter(o => {
     if (failedOf(o).length === 0) return false;
-    if (p && o.partner !== p) return false;
+    if (fs && o.supplier !== fs) return false;
+    if (fn && !o.patient.includes(fn)) return false;
+    if (fp && !o.phone.includes(fp)) return false;
+
+    const day = o.createdAt.slice(0, 10);
+    if (d1 && day < d1) return false;
+    if (d2 && day > d2) return false;
+
     if (q){
       const hit = o.id.toLowerCase().includes(q) ||
                   o.partnerOrderNo.toLowerCase().includes(q) ||
@@ -434,7 +467,7 @@ function renderList(){
 
   const body = $('list-body');
   if (!rows.length){
-    body.innerHTML = '<tr><td colspan="12"><div class="empty"><div class="big">✓</div>暂无异常订单</div></td></tr>';
+    body.innerHTML = '<tr><td colspan="14"><div class="empty"><div class="big">✓</div>暂无异常订单</div></td></tr>';
     return;
   }
 
@@ -446,6 +479,8 @@ function renderList(){
       '<td class="mono">' + o.partnerOrderNo + '</td>' +
       '<td>' + o.supplier + '</td>' +
       '<td class="mono">' + o.supplierOrderNo + '</td>' +
+      '<td>' + maskName(o.patient) + '</td>' +
+      '<td class="mono">' + maskPhone(o.phone) + '</td>' +
       '<td>' + latest.store + '</td>' +
       '<td>' + latest.status + '</td>' +
       '<td>序号 ' + first.seq + ' ' + first.status + '</td>' +
@@ -486,8 +521,11 @@ function renderDetail(){
     '<div class="item">业务公司单号<b>' + o.partnerOrderNo + '</b></div>' +
     '<div class="item">服务商<b>' + o.supplier + '</b></div>' +
     '<div class="item">服务商单号<b>' + o.supplierOrderNo + '</b></div>' +
+    '<div class="item">预约人姓名<b>' + maskName(o.patient) + '</b></div>' +
+    '<div class="item">手机号<b>' + maskPhone(o.phone) + '</b></div>' +
     '<div class="item">当前预约门店<b>' + latest.store + '</b></div>' +
     '<div class="item">最新订单状态<b>' + latest.status + '</b></div>' +
+    '<div class="item">下单时间<b>' + o.createdAt + '</b></div>' +
     '<div class="item">最后更新<b>' + latest.changed + '</b></div>';
 
   const bar = $('d-bar');
@@ -704,12 +742,12 @@ document.addEventListener('click', function(e){
 });
 
 document.addEventListener('input', function(e){
-  if (e.target.id === 'q') renderList();
+  if (e.target.id === 'q' || e.target.id === 'fname' || e.target.id === 'fphone') renderList();
   else if (e.target.id === 'm-remark') validateModal();
 });
 
 document.addEventListener('change', function(e){
-  if (e.target.id === 'fp') renderList();
+  if (e.target.id === 'fs' || e.target.id === 'fstart' || e.target.id === 'fend') renderList();
   else if (e.target.id === 'm-reason') validateModal();
   else if (e.target.type === 'checkbox' && e.target.getAttribute('data-seq') !== null){
     toggleSeq(Number(e.target.getAttribute('data-seq')), e.target.checked);
