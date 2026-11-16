@@ -95,8 +95,15 @@ tbody tr:hover{background:#fafbfc}
 .table-wrap td:last-child{position:sticky;right:0;background:#fff;box-shadow:-8px 0 8px -8px rgba(0,0,0,.18);z-index:2}
 .table-wrap th:last-child{background:#f7f8fa;z-index:3}
 .table-wrap tbody tr:hover td:last-child{background:#fafbfc}
+.table-wrap-sm{overflow-x:auto}
+.table-wrap-sm table{min-width:1240px}
+.table-wrap-sm th:last-child,
+.table-wrap-sm td:last-child{position:sticky;right:0;background:#fff;box-shadow:-8px 0 8px -8px rgba(0,0,0,.18);z-index:2}
+.table-wrap-sm th:last-child{background:#f7f8fa;z-index:3}
+.table-wrap-sm tbody tr:hover td:last-child{background:#fafbfc}
+.nowrap{white-space:nowrap}
 .table-wrap{overflow-x:auto}
-.table-wrap table{min-width:1800px}
+.table-wrap table{min-width:1880px}
 .mono{font-family:Consolas,Menlo,Monaco,monospace;font-size:12px;letter-spacing:-.2px}
 
 /* ---------- summary bar ---------- */
@@ -246,11 +253,11 @@ h3:first-child{margin-top:0}
                   <th style="width:112px">手机号</th>
                   <th style="width:92px">预约门店</th>
                   <th style="width:104px">最新订单状态</th>
-                  <th style="width:150px">最早未成功订单状态</th>
+                  <th style="width:156px">最早未成功订单状态</th>
                   <th style="width:76px">未成功条数</th>
                   <th>最近失败原因</th>
-                  <th style="width:96px">失败时间</th>
-                  <th style="width:118px">补推结果</th>
+                  <th style="width:150px">失败时间</th>
+                  <th style="width:150px">补推结果</th>
                   <th style="width:112px">操作</th>
                 </tr>
               </thead>
@@ -270,23 +277,25 @@ h3:first-child{margin-top:0}
           <div class="meta" id="d-meta"></div>
           <div class="sync-bar" id="d-bar" style="margin:16px"></div>
           <div class="panel">
+            <div class="table-wrap-sm">
             <table>
               <thead>
                 <tr>
                   <th style="width:48px">序号</th>
-                  <th style="width:132px">订单状态</th>
-                  <th style="width:84px">预约门店</th>
-                  <th style="width:104px">预约时间</th>
-                  <th style="width:112px">状态变更时间</th>
-                  <th style="width:160px">推送结果</th>
-                  <th style="width:92px">推送时间</th>
-                  <th style="width:96px">补推结果</th>
-                  <th style="width:92px">补推时间</th>
+                  <th style="width:130px">订单状态</th>
+                  <th style="width:80px">预约门店</th>
+                  <th style="width:150px">预约时间</th>
+                  <th style="width:150px">状态变更时间</th>
+                  <th style="width:150px">推送结果</th>
+                  <th style="width:150px">推送时间</th>
+                  <th style="width:90px">补推结果</th>
+                  <th style="width:150px">补推时间</th>
                   <th style="width:130px">操作</th>
                 </tr>
               </thead>
               <tbody id="d-body"></tbody>
             </table>
+            </div>
             <div class="note" style="margin-top:12px">
               说明：待确认、取消审核中为内部订单状态，不推送业务公司，显示为「—」；推送结果仅区分成功与失败，请求超时或无回执均按失败处理。
             </div>
@@ -404,32 +413,32 @@ const RISK = {
 
 const SEED = [
   {
-    id:'DD20261116001', partner:'华夏银行', supplier:'康恩斯瑞', partnerOrderNo:'HX202611160088', supplierOrderNo:'KH202611160001', patient:'张伟', phone:'13812345678', createdAt:'2026-11-14 09:45',
+    id:'DD20261116001', partner:'华夏银行', supplier:'康恩斯瑞', partnerOrderNo:'HX202611160088', supplierOrderNo:'KH202611160001', patient:'张伟', phone:'13812345678', createdAt:'2026-11-14 09:45:12',
     records:[
-      {seq:1,status:'待确认',store:'朝阳门店',appoint:'—',changed:'11-16 09:50',push:false,result:'internal'},
-      {seq:2,status:'已预约',store:'朝阳门店',appoint:'11-18 14:00',changed:'11-16 10:00',push:true,result:'success',pushTime:'11-16 10:00'},
-      {seq:3,status:'已改期',store:'朝阳门店',appoint:'11-19 10:00',changed:'11-16 11:20',push:true,result:'success',pushTime:'11-16 11:20'},
-      {seq:4,status:'已转店',store:'海淀门店',appoint:'11-19 10:00',changed:'11-16 13:10',push:true,result:'success',pushTime:'11-16 13:10'},
-      {seq:5,status:'已到诊',store:'海淀门店',appoint:'11-19 10:00',changed:'11-16 14:05',push:true,result:'fail',err:'业务公司返回 500：预约门店编码 ST002 不存在',pushTime:'11-16 14:05'},
-      {seq:6,status:'已完成',store:'海淀门店',appoint:'—',changed:'11-16 15:30',push:true,result:'fail',err:'请求超时（15s）',pushTime:'11-16 15:30'}
+      {seq:1,status:'待确认',store:'朝阳门店',appoint:'—',changed:'2026-11-16 09:50:12',push:false,result:'internal'},
+      {seq:2,status:'已预约',store:'朝阳门店',appoint:'2026-11-18 14:00:00',changed:'2026-11-16 10:00:21',push:true,result:'success',pushTime:'2026-11-16 10:00:21'},
+      {seq:3,status:'已改期',store:'朝阳门店',appoint:'2026-11-19 10:00:00',changed:'2026-11-16 11:20:08',push:true,result:'success',pushTime:'2026-11-16 11:20:08'},
+      {seq:4,status:'已转店',store:'海淀门店',appoint:'2026-11-19 10:00:00',changed:'2026-11-16 13:10:44',push:true,result:'success',pushTime:'2026-11-16 13:10:44'},
+      {seq:5,status:'已到诊',store:'海淀门店',appoint:'2026-11-19 10:00:00',changed:'2026-11-16 14:05:03',push:true,result:'fail',err:'业务公司返回 500：预约门店编码 ST002 不存在',pushTime:'2026-11-16 14:05:03'},
+      {seq:6,status:'已完成',store:'海淀门店',appoint:'—',changed:'2026-11-16 15:30:27',push:true,result:'fail',err:'请求超时（15s）',pushTime:'2026-11-16 15:30:27'}
     ]
   },
   {
-    id:'DD20261116002', partner:'招商银行', supplier:'瑞尔', partnerOrderNo:'ZS202611160231', supplierOrderNo:'AK202611160002', patient:'李静', phone:'13998765432', createdAt:'2026-11-15 09:10',
+    id:'DD20261116002', partner:'招商银行', supplier:'瑞尔', partnerOrderNo:'ZS202611160231', supplierOrderNo:'AK202611160002', patient:'李静', phone:'13998765432', createdAt:'2026-11-15 09:10:05',
     records:[
-      {seq:1,status:'待确认',store:'朝阳门店',appoint:'—',changed:'11-16 09:20',push:false,result:'internal'},
-      {seq:2,status:'已预约',store:'朝阳门店',appoint:'11-17 09:00',changed:'11-16 09:30',push:true,result:'success',pushTime:'11-16 09:30'},
-      {seq:3,status:'已取消',store:'朝阳门店',appoint:'—',changed:'11-16 14:20',push:true,result:'fail',err:'业务公司返回 500：订单状态非法',pushTime:'11-16 14:20',retryResult:'fail',retryTime:'11-16 15:10'}
+      {seq:1,status:'待确认',store:'朝阳门店',appoint:'—',changed:'2026-11-16 09:20:11',push:false,result:'internal'},
+      {seq:2,status:'已预约',store:'朝阳门店',appoint:'2026-11-17 09:00:00',changed:'2026-11-16 09:30:02',push:true,result:'success',pushTime:'2026-11-16 09:30:02'},
+      {seq:3,status:'已取消',store:'朝阳门店',appoint:'—',changed:'2026-11-16 14:20:19',push:true,result:'fail',err:'业务公司返回 500：订单状态非法',pushTime:'2026-11-16 14:20:19',retryResult:'fail',retryTime:'2026-11-16 15:10:08'}
     ]
   },
   {
-    id:'DD20261116003', partner:'平安银行', supplier:'康恩斯瑞', partnerOrderNo:'PA202611160517', supplierOrderNo:'YY202611160003', patient:'王芳', phone:'13600001111', createdAt:'2026-11-16 08:30',
+    id:'DD20261116003', partner:'平安银行', supplier:'康恩斯瑞', partnerOrderNo:'PA202611160517', supplierOrderNo:'YY202611160003', patient:'王芳', phone:'13600001111', createdAt:'2026-11-16 08:30:44',
     records:[
-      {seq:1,status:'待确认',store:'望京门店',appoint:'—',changed:'11-16 08:40',push:false,result:'internal'},
-      {seq:2,status:'已预约',store:'望京门店',appoint:'11-20 15:00',changed:'11-16 09:00',push:true,result:'success',pushTime:'11-16 09:00'},
-      {seq:3,status:'已联系未接通',store:'望京门店',appoint:'11-20 15:00',changed:'11-16 10:10',push:true,result:'fail',err:'请求超时（15s）',pushTime:'11-16 10:10',retryResult:'success',retryTime:'11-16 15:40'},
-      {seq:4,status:'已联系未预约',store:'望京门店',appoint:'11-20 15:00',changed:'11-16 11:00',push:true,result:'fail',err:'未发起推送（无回执）',retryResult:'success',retryTime:'11-16 15:40'},
-      {seq:5,status:'预约失败',store:'望京门店',appoint:'—',changed:'11-16 16:10',push:true,result:'fail',err:'业务公司返回 500：服务暂时不可用',pushTime:'11-16 16:10',retryResult:'success',retryTime:'11-16 15:40'}
+      {seq:1,status:'待确认',store:'望京门店',appoint:'—',changed:'2026-11-16 08:40:01',push:false,result:'internal'},
+      {seq:2,status:'已预约',store:'望京门店',appoint:'2026-11-20 15:00:00',changed:'2026-11-16 09:00:33',push:true,result:'success',pushTime:'2026-11-16 09:00:33'},
+      {seq:3,status:'已联系未接通',store:'望京门店',appoint:'2026-11-20 15:00:00',changed:'2026-11-16 10:10:15',push:true,result:'fail',err:'请求超时（15s）',pushTime:'2026-11-16 10:10:15',retryResult:'success',retryTime:'2026-11-16 16:20:11'},
+      {seq:4,status:'已联系未预约',store:'望京门店',appoint:'2026-11-20 15:00:00',changed:'2026-11-16 11:00:07',push:true,result:'fail',err:'未发起推送（无回执）',retryResult:'success',retryTime:'2026-11-16 16:20:11'},
+      {seq:5,status:'预约失败',store:'望京门店',appoint:'—',changed:'2026-11-16 16:10:50',push:true,result:'fail',err:'业务公司返回 500：服务暂时不可用',pushTime:'2026-11-16 16:10:50',retryResult:'success',retryTime:'2026-11-16 16:20:11'}
     ]
   }
 ];
@@ -480,7 +489,8 @@ function maskPhone(p){
 function nowStr(){
   const d = new Date();
   const p = n => String(n).padStart(2, '0');
-  return '11-16 ' + p(d.getHours()) + ':' + p(d.getMinutes());
+  return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + ' ' +
+    p(d.getHours()) + ':' + p(d.getMinutes()) + ':' + p(d.getSeconds());
 }
 function toast(msg, type){
   const colors = {ok:'#00b42a', err:'#f53f3f', info:'#1677ff'};
@@ -558,7 +568,7 @@ function renderList(forceIds){
   body.innerHTML = rows.map(o => {
     const pending = pendingOf(o);
     const fails = failedOriginal(o);
-    const first = pending[0];
+    const first = fails[0];
     const last = fails[fails.length - 1];
     const latest = latestOf(o);
     const countColor = pending.length ? '#f53f3f' : '#86909c';
@@ -574,9 +584,9 @@ function renderList(forceIds){
       '<td>' + latest.store + '</td>' +
       '<td>' + latest.status + '</td>' +
       '<td>' + (first ? '序号 ' + first.seq + ' ' + first.status : '—') + '</td>' +
-      '<td><b style="color:' + countColor + '">' + pending.length + '</b> 条</td>' +
+      '<td><b style="color:' + countColor + '">' + fails.length + '</b> 条</td>' +
       '<td>' + (last && last.err ? last.err : '—') + '</td>' +
-      '<td class="muted">' + (last ? last.changed : '—') + '</td>' +
+      '<td class="muted nowrap">' + (last ? last.changed : '—') + '</td>' +
       '<td>' + retryCell(o) + '</td>' +
       '<td class="op-cell"><button type="button" class="link-btn" data-act="detail" data-id="' + o.id + '">查看</button>' +
           '<button type="button" class="link-btn" data-act="push" data-id="' + o.id + '">补推</button></td>' +
@@ -669,12 +679,12 @@ function recordRow(r){
     '<td class="muted">' + r.seq + '</td>' +
     '<td>' + (internal ? '<span class="muted">' : '<b style="font-weight:500">') + r.status + (internal ? '</span>' : '</b>') + risk + '</td>' +
     '<td>' + r.store + '</td>' +
-    '<td class="muted">' + r.appoint + '</td>' +
-    '<td class="muted">' + r.changed + '</td>' +
+    '<td class="muted nowrap">' + r.appoint + '</td>' +
+    '<td class="muted nowrap">' + r.changed + '</td>' +
     '<td>' + result + '</td>' +
-    '<td class="muted">' + (r.pushTime || '—') + '</td>' +
+    '<td class="muted nowrap">' + (r.pushTime || '—') + '</td>' +
     '<td>' + retry + '</td>' +
-    '<td class="muted">' + (r.retryTime || '—') + '</td>' +
+    '<td class="muted nowrap">' + (r.retryTime || '—') + '</td>' +
     '<td>' + action + '</td>' +
   '</tr>';
 }
@@ -777,8 +787,8 @@ function openDrawer(seq){
     statusName: r.status,
     storeCode: STORE_CODE[r.store] || '',
     storeName: r.store,
-    appointmentTime: r.appoint === '—' ? '' : '2026-' + r.appoint.replace(' ', ' ') + ':00',
-    changeTime: '2026-' + r.changed + ':00',
+    appointmentTime: r.appoint === '—' ? '' : r.appoint,
+    changeTime: r.changed,
     retryFlag: true,
     retryReason: 'MANUAL'
   };
