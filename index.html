@@ -82,6 +82,12 @@ tbody tr:hover{background:#fafbfc}
 .filter .f-item select{width:112px}
 .f-item .tilde{color:#86909c;font-size:12px}
 .filter .sp{flex:1}
+.tabs{display:flex;gap:26px;padding:0 16px;border-bottom:1px solid #e5e6eb}
+.tab{padding:12px 0;font-size:14px;color:#4e5969;cursor:pointer;border-bottom:2px solid transparent;display:flex;align-items:center;gap:6px}
+.tab:hover{color:#1677ff}
+.tab.active{color:#1677ff;font-weight:500;border-bottom-color:#1677ff}
+.tab-num{background:#f2f3f5;color:#86909c;border-radius:9px;padding:0 6px;font-size:11px;line-height:17px}
+.tab.active .tab-num{background:#e8f3ff;color:#1677ff}
 .link-btn{background:none;border:none;color:#1677ff;font-size:13px;font-family:inherit;padding:5px 7px;cursor:pointer;border-radius:4px}
 .link-btn:hover{background:#e8f3ff}
 .op-cell{white-space:nowrap}
@@ -90,7 +96,7 @@ tbody tr:hover{background:#fafbfc}
 .table-wrap th:last-child{background:#f7f8fa;z-index:3}
 .table-wrap tbody tr:hover td:last-child{background:#fafbfc}
 .table-wrap{overflow-x:auto}
-.table-wrap table{min-width:1660px}
+.table-wrap table{min-width:1800px}
 .mono{font-family:Consolas,Menlo,Monaco,monospace;font-size:12px;letter-spacing:-.2px}
 
 /* ---------- summary bar ---------- */
@@ -189,8 +195,13 @@ h3:first-child{margin-top:0}
       <section id="view-list">
         <div class="card">
           <div class="card-head">
-            <div class="card-title">异常订单</div>
-            <div class="muted">接口监控告警自动进入 · 仅展示未同步成功的可推送订单状态</div>
+            <div class="card-title">订单列表</div>
+            <div class="muted">接口监控告警自动进入 · 保留补推历史，可重复补推</div>
+          </div>
+          <div class="tabs">
+            <div class="tab" id="tab-btn-all" data-act="tab" data-tab="all">全部<span class="tab-num" id="tab-all">0</span></div>
+            <div class="tab active" id="tab-btn-error" data-act="tab" data-tab="error">异常订单<span class="tab-num" id="tab-error">0</span></div>
+            <div class="tab" id="tab-btn-success" data-act="tab" data-tab="success">补推成功<span class="tab-num" id="tab-success">0</span></div>
           </div>
           <div class="filter">
             <div class="f-item">
@@ -220,7 +231,7 @@ h3:first-child{margin-top:0}
               <input id="fend" class="date" type="date">
             </div>
             <div class="sp"></div>
-            <span class="muted">共 <b id="sync-count">0</b> 笔待处理</span>
+            <span class="muted">共 <b id="sync-count">0</b> 笔</span>
           </div>
           <div class="table-wrap">
             <table>
@@ -239,6 +250,7 @@ h3:first-child{margin-top:0}
                   <th style="width:76px">未成功条数</th>
                   <th>最近失败原因</th>
                   <th style="width:96px">失败时间</th>
+                  <th style="width:118px">补推结果</th>
                   <th style="width:112px">操作</th>
                 </tr>
               </thead>
@@ -262,13 +274,15 @@ h3:first-child{margin-top:0}
               <thead>
                 <tr>
                   <th style="width:48px">序号</th>
-                  <th style="width:150px">订单状态</th>
-                  <th>预约门店</th>
-                  <th style="width:120px">预约时间</th>
-                  <th style="width:130px">状态变更时间</th>
-                  <th style="width:190px">推送结果</th>
-                  <th style="width:110px">推送时间</th>
-                  <th style="width:150px">操作</th>
+                  <th style="width:132px">订单状态</th>
+                  <th style="width:84px">预约门店</th>
+                  <th style="width:104px">预约时间</th>
+                  <th style="width:112px">状态变更时间</th>
+                  <th style="width:160px">推送结果</th>
+                  <th style="width:92px">推送时间</th>
+                  <th style="width:96px">补推结果</th>
+                  <th style="width:92px">补推时间</th>
+                  <th style="width:130px">操作</th>
                 </tr>
               </thead>
               <tbody id="d-body"></tbody>
@@ -405,7 +419,7 @@ const SEED = [
     records:[
       {seq:1,status:'待确认',store:'朝阳门店',appoint:'—',changed:'11-16 09:20',push:false,result:'internal'},
       {seq:2,status:'已预约',store:'朝阳门店',appoint:'11-17 09:00',changed:'11-16 09:30',push:true,result:'success',pushTime:'11-16 09:30'},
-      {seq:3,status:'已取消',store:'朝阳门店',appoint:'—',changed:'11-16 14:20',push:true,result:'fail',err:'业务公司返回 500：订单状态非法',pushTime:'11-16 14:20'}
+      {seq:3,status:'已取消',store:'朝阳门店',appoint:'—',changed:'11-16 14:20',push:true,result:'fail',err:'业务公司返回 500：订单状态非法',pushTime:'11-16 14:20',retryResult:'fail',retryTime:'11-16 15:10'}
     ]
   },
   {
@@ -413,9 +427,9 @@ const SEED = [
     records:[
       {seq:1,status:'待确认',store:'望京门店',appoint:'—',changed:'11-16 08:40',push:false,result:'internal'},
       {seq:2,status:'已预约',store:'望京门店',appoint:'11-20 15:00',changed:'11-16 09:00',push:true,result:'success',pushTime:'11-16 09:00'},
-      {seq:3,status:'已联系未接通',store:'望京门店',appoint:'11-20 15:00',changed:'11-16 10:10',push:true,result:'fail',err:'请求超时（15s）',pushTime:'11-16 10:10'},
-      {seq:4,status:'已联系未预约',store:'望京门店',appoint:'11-20 15:00',changed:'11-16 11:00',push:true,result:'fail',err:'未发起推送（无回执）'},
-      {seq:5,status:'预约失败',store:'望京门店',appoint:'—',changed:'11-16 16:10',push:true,result:'fail',err:'业务公司返回 500：服务暂时不可用',pushTime:'11-16 16:10'}
+      {seq:3,status:'已联系未接通',store:'望京门店',appoint:'11-20 15:00',changed:'11-16 10:10',push:true,result:'fail',err:'请求超时（15s）',pushTime:'11-16 10:10',retryResult:'success',retryTime:'11-16 15:40'},
+      {seq:4,status:'已联系未预约',store:'望京门店',appoint:'11-20 15:00',changed:'11-16 11:00',push:true,result:'fail',err:'未发起推送（无回执）',retryResult:'success',retryTime:'11-16 15:40'},
+      {seq:5,status:'预约失败',store:'望京门店',appoint:'—',changed:'11-16 16:10',push:true,result:'fail',err:'业务公司返回 500：服务暂时不可用',pushTime:'11-16 16:10',retryResult:'success',retryTime:'11-16 15:40'}
     ]
   }
 ];
@@ -423,11 +437,37 @@ const SEED = [
 let orders = JSON.parse(JSON.stringify(SEED));
 let currentId = null;
 let modalSeqs = [];
+let currentTab = 'error';
 
 /* ================= 工具 ================= */
 const $ = id => document.getElementById(id);
 const clone = o => JSON.parse(JSON.stringify(o));
-function failedOf(o){ return o.records.filter(r => r.push && r.result !== 'success'); }
+function failedOriginal(o){ return o.records.filter(r => r.push && r.result !== 'success'); }
+function pendingOf(o){ return failedOriginal(o).filter(r => r.retryResult !== 'success'); }
+function hasFailure(o){ return failedOriginal(o).length > 0; }
+function retryStatusOf(o){
+  const fails = failedOriginal(o);
+  if (!fails.length) return '';
+  const pending = fails.filter(r => r.retryResult !== 'success');
+  if (!pending.length) return '补推成功';
+  if (fails.some(r => r.retryResult === 'fail')) return '补推失败';
+  return '待处理';
+}
+function lastRetryTimeOf(o){
+  const t = o.records.filter(r => r.retryTime).map(r => r.retryTime).sort();
+  return t.length ? t[t.length - 1] : '';
+}
+function retryCell(o){
+  const st = retryStatusOf(o);
+  const t = lastRetryTimeOf(o);
+  const cls = st === '补推成功' ? 'tag-green' : (st === '补推失败' ? 'tag-red' : 'tag-gray');
+  return '<span class="tag ' + cls + '" style="margin-left:0">' + st + '</span>' +
+    (t ? '<div class="muted" style="font-size:12px;margin-top:3px">' + t + '</div>' : '');
+}
+function modalListOf(o){
+  const p = pendingOf(o);
+  return p.length ? p : failedOriginal(o);
+}
 function latestOf(o){ return o.records[o.records.length - 1]; }
 function maskName(n){
   if (!n) return '';
@@ -454,7 +494,7 @@ function toast(msg, type){
 }
 
 /* ================= 列表 ================= */
-function renderList(){
+function renderList(forceIds){
   const q = ($('q').value || '').trim().toLowerCase();
   const fs = $('fs').value;
   const fn = ($('fname').value || '').trim();
@@ -462,8 +502,28 @@ function renderList(){
   const d1 = $('fstart').value;
   const d2 = $('fend').value;
 
-  const rows = orders.filter(o => {
-    if (failedOf(o).length === 0) return false;
+  const allOrders = orders.filter(hasFailure);
+  const errorOrders = allOrders.filter(o => {
+    const s = retryStatusOf(o);
+    return s === '待处理' || s === '补推失败';
+  });
+  const successOrders = allOrders.filter(o => retryStatusOf(o) === '补推成功');
+
+  $('tab-all').textContent = allOrders.length;
+  $('tab-error').textContent = errorOrders.length;
+  $('tab-success').textContent = successOrders.length;
+
+  $('nav-badge').textContent = errorOrders.length;
+  $('nav-badge').style.display = errorOrders.length ? '' : 'none';
+
+  ['all', 'error', 'success'].forEach(function(k){
+    const el = $('tab-btn-' + k);
+    if (el) el.className = 'tab' + (k === currentTab ? ' active' : '');
+  });
+
+  const base = currentTab === 'all' ? allOrders : (currentTab === 'success' ? successOrders : errorOrders);
+
+  let rows = base.filter(o => {
     if (fs && o.supplier !== fs) return false;
     if (fn && !o.patient.includes(fn)) return false;
     if (fp && !o.phone.includes(fp)) return false;
@@ -481,18 +541,28 @@ function renderList(){
     return true;
   });
 
+  if (forceIds){
+    orders.forEach(function(o){
+      if (forceIds.has(o.id) && rows.indexOf(o) === -1) rows.unshift(o);
+    });
+  }
+
   $('sync-count').textContent = rows.length;
-  $('nav-badge').textContent = rows.length;
-  $('nav-badge').style.display = rows.length ? '' : 'none';
 
   const body = $('list-body');
   if (!rows.length){
-    body.innerHTML = '<tr><td colspan="14"><div class="empty"><div class="big">✓</div>暂无异常订单</div></td></tr>';
+    body.innerHTML = '<tr><td colspan="15"><div class="empty"><div class="big">✓</div>暂无订单</div></td></tr>';
     return;
   }
 
   body.innerHTML = rows.map(o => {
-    const f = failedOf(o), first = f[0], last = f[f.length - 1], latest = latestOf(o);
+    const pending = pendingOf(o);
+    const fails = failedOriginal(o);
+    const first = pending[0];
+    const last = fails[fails.length - 1];
+    const latest = latestOf(o);
+    const countColor = pending.length ? '#f53f3f' : '#86909c';
+
     return '<tr>' +
       '<td><span class="link" data-act="detail" data-id="' + o.id + '">' + o.id + '</span></td>' +
       '<td>' + o.partner + '</td>' +
@@ -503,10 +573,11 @@ function renderList(){
       '<td class="mono">' + maskPhone(o.phone) + '</td>' +
       '<td>' + latest.store + '</td>' +
       '<td>' + latest.status + '</td>' +
-      '<td>序号 ' + first.seq + ' ' + first.status + '</td>' +
-      '<td><b style="color:#f53f3f">' + f.length + '</b> 条</td>' +
-      '<td>' + (last.err || '—') + '</td>' +
-      '<td class="muted">' + last.changed + '</td>' +
+      '<td>' + (first ? '序号 ' + first.seq + ' ' + first.status : '—') + '</td>' +
+      '<td><b style="color:' + countColor + '">' + pending.length + '</b> 条</td>' +
+      '<td>' + (last && last.err ? last.err : '—') + '</td>' +
+      '<td class="muted">' + (last ? last.changed : '—') + '</td>' +
+      '<td>' + retryCell(o) + '</td>' +
       '<td class="op-cell"><button type="button" class="link-btn" data-act="detail" data-id="' + o.id + '">查看</button>' +
           '<button type="button" class="link-btn" data-act="push" data-id="' + o.id + '">补推</button></td>' +
     '</tr>';
@@ -532,7 +603,10 @@ function goList(){
 function renderDetail(){
   const o = orders.find(x => x.id === currentId);
   if (!o) return;
-  const f = failedOf(o), latest = latestOf(o);
+  const pending = pendingOf(o);
+  const latest = latestOf(o);
+  const st = retryStatusOf(o);
+  const rt = lastRetryTimeOf(o);
 
   $('d-title').textContent = '订单流转记录 · ' + o.id;
   $('d-meta').innerHTML =
@@ -546,17 +620,20 @@ function renderDetail(){
     '<div class="item">当前预约门店<b>' + latest.store + '</b></div>' +
     '<div class="item">最新订单状态<b>' + latest.status + '</b></div>' +
     '<div class="item">下单时间<b>' + o.createdAt + '</b></div>' +
+    '<div class="item">补推结果<b>' + st + '</b></div>' +
+    '<div class="item">最近补推时间<b>' + (rt || '—') + '</b></div>' +
     '<div class="item">最后更新<b>' + latest.changed + '</b></div>';
 
   const bar = $('d-bar');
-  if (f.length){
+  if (pending.length){
     bar.className = 'sync-bar';
-    bar.innerHTML = '<div class="txt">⚠️ 未成功 <b>' + f.length + '</b> 条（序号 ' +
-      f.map(x => x.seq).join('、') + '）</div>' +
+    bar.innerHTML = '<div class="txt">⚠️ 未成功 <b>' + pending.length + '</b> 条（序号 ' +
+      pending.map(x => x.seq).join('、') + '）</div>' +
       '<div><button class="btn btn-primary" data-act="push" data-id="' + o.id + '">补推未成功的订单状态</button></div>';
   } else {
     bar.className = 'sync-bar ok-bar';
-    bar.innerHTML = '<div class="txt">✅ 所有可推送订单状态均已同步成功</div><div></div>';
+    bar.innerHTML = '<div class="txt">✅ 补推成功' + (rt ? '（最近补推 ' + rt + '）' : '') + '，订单保留在列表中</div>' +
+      '<div><button class="btn" data-act="push" data-id="' + o.id + '">再次补推</button></div>';
   }
 
   $('d-body').innerHTML = clone(o.records).reverse().map(recordRow).join('');
@@ -564,7 +641,7 @@ function renderDetail(){
 
 function recordRow(r){
   const internal = !r.push;
-  let result = '', action = '';
+  let result = '', retry = '<span class="muted">—</span>', action = '';
 
   if (internal){
     result = '<span class="muted">—</span><span class="tag tag-gray">仅内部</span>';
@@ -574,12 +651,17 @@ function recordRow(r){
     result = '<span class="err">❌ 失败</span><div class="sub-err">' + (r.err || '未获取到成功回执') + '</div>';
   }
 
-  const risk = (!internal && r.result !== 'success' && RISK[r.status])
+  if (!internal){
+    if (r.retryResult === 'success') retry = '<span class="ok">✅ 成功</span>';
+    else if (r.retryResult === 'fail') retry = '<span class="err">❌ 失败</span>';
+  }
+
+  const risk = (!internal && r.result !== 'success' && r.retryResult !== 'success' && RISK[r.status])
     ? '<div class="risk">⚠️ ' + RISK[r.status] + '</div>' : '';
 
   action = '<span class="link" data-act="drawer" data-seq="' + r.seq + '">查看报文</span>';
   if (!internal && r.result !== 'success'){
-    action += ' <span class="link" data-act="push" data-id="' + currentId + '" data-seq="' + r.seq + '">仅推此条</span>';
+    action += ' <span class="link" data-act="push" data-id="' + currentId + '" data-seq="' + r.seq + '">补推此条</span>';
   }
 
   const style = internal ? ' style="background:#fafafa"' : '';
@@ -591,6 +673,8 @@ function recordRow(r){
     '<td class="muted">' + r.changed + '</td>' +
     '<td>' + result + '</td>' +
     '<td class="muted">' + (r.pushTime || '—') + '</td>' +
+    '<td>' + retry + '</td>' +
+    '<td class="muted">' + (r.retryTime || '—') + '</td>' +
     '<td>' + action + '</td>' +
   '</tr>';
 }
@@ -599,8 +683,8 @@ function recordRow(r){
 function openModal(id, onlySeq){
   currentId = id;
   const o = orders.find(x => x.id === id);
-  const f = failedOf(o);
-  modalSeqs = onlySeq ? [onlySeq] : f.map(r => r.seq);
+  const list = modalListOf(o);
+  modalSeqs = onlySeq ? [onlySeq] : list.map(r => r.seq);
 
   $('modal-order').textContent = o.id + ' · ' + o.partner;
   $('m-reason').value = '';
@@ -611,20 +695,21 @@ function openModal(id, onlySeq){
 
 function renderModalList(){
   const o = orders.find(x => x.id === currentId);
-  const f = failedOf(o);
-  const total = f.length;
+  const list = modalListOf(o);
+  const total = list.length;
 
-  $('m-list').innerHTML = f.map(r => {
+  $('m-list').innerHTML = list.map(r => {
     const checked = modalSeqs.includes(r.seq);
     const risk = RISK[r.status] ? '<div class="risk">⚠️ ' + RISK[r.status] + '</div>' : '';
-    let last = '';
-    last = '<span class="err">失败：' + (r.err || '未获取到成功回执') + '</span>';
+    const last = (r.retryResult === 'success')
+      ? '<span class="ok">已补推成功</span>'
+      : '<span class="err">失败：' + (r.err || '未获取到成功回执') + '</span>';
 
     return '<label class="push-item ' + (checked ? 'checked' : '') + '">' +
       '<input type="checkbox" data-seq="' + r.seq + '" ' + (checked ? 'checked' : '') + '>' +
       '<div class="pi-main">' +
         '<div class="pi-title">序号 ' + r.seq + ' · ' + r.status + '</div>' +
-        '<div class="pi-sub">' + r.store + ' ｜ 变更 ' + r.changed + ' ｜ 上次：' + last + '</div>' +
+        '<div class="pi-sub">' + r.store + ' ｜ 变更 ' + r.changed + ' ｜ ' + last + '</div>' +
         risk +
       '</div>' +
     '</label>';
@@ -632,7 +717,7 @@ function renderModalList(){
 
   const skipped = total - modalSeqs.length;
   $('m-hint').innerHTML = (skipped > 0 && modalSeqs.length > 0)
-    ? '<div class="hint">已跳过 ' + skipped + ' 条未成功记录，业务公司可能因订单状态不连续而拒绝，建议按序推送。</div>'
+    ? '<div class="hint">已跳过 ' + skipped + ' 条记录，业务公司可能因订单状态不连续而拒绝，建议按序推送。</div>'
     : '';
 
   updateCount();
@@ -665,7 +750,7 @@ function confirmPush(){
   const seqs = modalSeqs.slice().sort((a, b) => a - b);
   seqs.forEach(seq => {
     const r = o.records.find(x => x.seq === seq);
-    if (r){ r.result = 'success'; r.err = ''; r.pushTime = nowStr(); }
+    if (r){ r.retryResult = 'success'; r.retryTime = nowStr(); }
   });
   const n = seqs.length;
   closeModal();
@@ -673,11 +758,8 @@ function confirmPush(){
 
   setTimeout(() => {
     toast('补推完成：' + n + ' 条推送成功', 'ok');
-    if (orders.some(x => x.id === currentId)) renderDetail();
-    renderList();
-    if (failedOf(o).length === 0){
-      setTimeout(() => toast('该订单已无未成功的订单状态，移出异常订单列表', 'info'), 700);
-    }
+    renderDetail();
+    renderList(new Set([currentId]));
   }, 1200);
 }
 
@@ -724,6 +806,7 @@ function resetData(){
   orders = clone(SEED);
   currentId = null;
   modalSeqs = [];
+  currentTab = 'error';
   goList();
   toast('演示数据已重置', 'info');
 }
@@ -750,6 +833,7 @@ document.addEventListener('click', function(e){
   var seq = (seqRaw === null || seqRaw === '') ? undefined : Number(seqRaw);
 
   if (act === 'list') goList();
+  else if (act === 'tab'){ currentTab = el.getAttribute('data-tab'); renderList(); }
   else if (act === 'detail') openDetail(id);
   else if (act === 'push') openModal(id, seq);
   else if (act === 'drawer') openDrawer(seq);
