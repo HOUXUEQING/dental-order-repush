@@ -103,7 +103,7 @@ tbody tr:hover{background:#fafbfc}
 .table-wrap-sm tbody tr:hover td:last-child{background:#fafbfc}
 .nowrap{white-space:nowrap}
 .table-wrap{overflow-x:auto}
-.table-wrap table{min-width:2000px}
+.table-wrap table{min-width:2150px}
 .mono{font-family:Consolas,Menlo,Monaco,monospace;font-size:12px;letter-spacing:-.2px}
 
 /* ---------- summary bar ---------- */
@@ -252,6 +252,7 @@ h3:first-child{margin-top:0}
                   <th style="width:90px">预约人姓名</th>
                   <th style="width:112px">手机号</th>
                   <th style="width:92px">预约门店</th>
+                  <th style="width:150px">下单时间</th>
                   <th style="width:104px">最新订单状态</th>
                   <th style="width:156px">最早未成功订单状态</th>
                   <th style="width:76px">未成功条数</th>
@@ -561,7 +562,7 @@ function renderList(forceIds){
 
   const body = $('list-body');
   if (!rows.length){
-    body.innerHTML = '<tr><td colspan="16"><div class="empty"><div class="big">✓</div>暂无订单</div></td></tr>';
+    body.innerHTML = '<tr><td colspan="17"><div class="empty"><div class="big">✓</div>暂无订单</div></td></tr>';
     return;
   }
 
@@ -582,6 +583,7 @@ function renderList(forceIds){
       '<td>' + maskName(o.patient) + '</td>' +
       '<td class="mono">' + maskPhone(o.phone) + '</td>' +
       '<td>' + latest.store + '</td>' +
+      '<td class="muted nowrap">' + o.createdAt + '</td>' +
       '<td>' + latest.status + '</td>' +
       '<td>' + (first ? '序号 ' + first.seq + ' ' + first.status : '—') + '</td>' +
       '<td><b style="color:' + countColor + '">' + fails.length + '</b> 条</td>' +
