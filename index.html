@@ -103,7 +103,7 @@ tbody tr:hover{background:#fafbfc}
 .table-wrap-sm tbody tr:hover td:last-child{background:#fafbfc}
 .nowrap{white-space:nowrap}
 .table-wrap{overflow-x:auto}
-.table-wrap table{min-width:1880px}
+.table-wrap table{min-width:2000px}
 .mono{font-family:Consolas,Menlo,Monaco,monospace;font-size:12px;letter-spacing:-.2px}
 
 /* ---------- summary bar ---------- */
@@ -257,7 +257,8 @@ h3:first-child{margin-top:0}
                   <th style="width:76px">未成功条数</th>
                   <th>最近失败原因</th>
                   <th style="width:150px">失败时间</th>
-                  <th style="width:150px">补推结果</th>
+                  <th style="width:100px">补推结果</th>
+                  <th style="width:150px">补推时间</th>
                   <th style="width:112px">操作</th>
                 </tr>
               </thead>
@@ -470,8 +471,7 @@ function retryCell(o){
   const st = retryStatusOf(o);
   const t = lastRetryTimeOf(o);
   const cls = st === '补推成功' ? 'tag-green' : (st === '补推失败' ? 'tag-red' : 'tag-gray');
-  return '<span class="tag ' + cls + '" style="margin-left:0">' + st + '</span>' +
-    (t ? '<div class="muted" style="font-size:12px;margin-top:3px">' + t + '</div>' : '');
+  return '<span class="tag ' + cls + '" style="margin-left:0">' + st + '</span>';
 }
 function modalListOf(o){
   const p = pendingOf(o);
@@ -561,7 +561,7 @@ function renderList(forceIds){
 
   const body = $('list-body');
   if (!rows.length){
-    body.innerHTML = '<tr><td colspan="15"><div class="empty"><div class="big">✓</div>暂无订单</div></td></tr>';
+    body.innerHTML = '<tr><td colspan="16"><div class="empty"><div class="big">✓</div>暂无订单</div></td></tr>';
     return;
   }
 
@@ -588,6 +588,7 @@ function renderList(forceIds){
       '<td>' + (last && last.err ? last.err : '—') + '</td>' +
       '<td class="muted nowrap">' + (last ? last.changed : '—') + '</td>' +
       '<td>' + retryCell(o) + '</td>' +
+      '<td class="muted nowrap">' + (lastRetryTimeOf(o) || '—') + '</td>' +
       '<td class="op-cell"><button type="button" class="link-btn" data-act="detail" data-id="' + o.id + '">查看</button>' +
           '<button type="button" class="link-btn" data-act="push" data-id="' + o.id + '">补推</button></td>' +
     '</tr>';
