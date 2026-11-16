@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>齿科服务 · 异常订单 · 补推原型</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font:13px/1.5 -apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;color:#1d2129;background:#f2f3f5;-webkit-font-smoothing:antialiased}
+button{font-family:inherit;cursor:pointer}
+.app{display:flex;height:100vh;overflow:hidden}
+
+/* ---------- sidebar ---------- */
+.sidebar{width:200px;flex:0 0 200px;background:#1d2129;color:#c9cdd4;display:flex;flex-direction:column}
+.logo{height:52px;display:flex;align-items:center;gap:9px;padding:0 18px;color:#fff;font-size:14px;font-weight:600;border-bottom:1px solid #2b3038;flex:0 0 52px}
+.logo .dot{width:18px;height:18px;border-radius:5px;background:linear-gradient(135deg,#1677ff,#52a9ff)}
+.nav{flex:1;overflow:auto;padding:10px 0}
+.nav-label{padding:10px 18px 6px;font-size:11px;color:#6b7785;letter-spacing:.5px}
+.nav-item{display:flex;align-items:center;justify-content:space-between;padding:9px 18px;font-size:13px;color:#c9cdd4;cursor:pointer;border-left:2px solid transparent}
+.nav-item:hover{background:#252a33;color:#fff}
+.nav-item.active{background:#111827;color:#fff;border-left-color:#1677ff}
+.nav-item.disabled{color:#5c6370;cursor:not-allowed}
+.nav-item.disabled:hover{background:transparent;color:#5c6370}
+.nav-parent{display:flex;align-items:center;justify-content:space-between;padding:10px 18px;color:#e5e6eb;font-size:13px;font-weight:500;margin-top:4px}
+.nav-parent .chev{font-size:10px;color:#6b7785}
+.nav-sub{padding-left:34px}
+.badge{min-width:16px;height:16px;padding:0 5px;border-radius:8px;background:#f53f3f;color:#fff;font-size:10px;line-height:16px;text-align:center}
+
+/* ---------- main ---------- */
+.main{flex:1;display:flex;flex-direction:column;min-width:0}
+.topbar{height:52px;flex:0 0 52px;background:#fff;border-bottom:1px solid #e5e6eb;display:flex;align-items:center;justify-content:space-between;padding:0 20px}
+.crumb{color:#86909c;font-size:13px}
+.crumb b{color:#1d2129;font-weight:500}
+.top-actions{display:flex;gap:14px;align-items:center}
+.content{flex:1;overflow:auto;padding:16px 20px 40px}
+
+/* ---------- card / table ---------- */
+.card{background:#fff;border-radius:6px;box-shadow:0 1px 2px rgba(0,0,0,.04);margin-bottom:16px;overflow:hidden}
+.card-head{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid #e5e6eb;gap:12px}
+.card-title{font-size:15px;font-weight:600}
+table{width:100%;border-collapse:collapse}
+th{background:#f7f8fa;color:#4e5969;font-weight:500;text-align:left;padding:9px 12px;border-bottom:1px solid #e5e6eb;white-space:nowrap;font-size:12px}
+td{padding:11px 12px;border-bottom:1px solid #f2f3f5;vertical-align:top}
+tbody tr:hover{background:#fafbfc}
+.link{color:#1677ff;cursor:pointer;white-space:nowrap}
+.link:hover{text-decoration:underline}
+.muted{color:#86909c}
+.sub-err{color:#f53f3f;font-size:12px;margin-top:2px;line-height:1.4}
+.warn-sub{color:#ff7d00;font-size:12px;margin-top:2px}
+.ok{color:#00b42a}
+.err{color:#f53f3f}
+.warn{color:#ff7d00}
+.pending{color:#86909c}
+.tag{display:inline-block;padding:0 5px;border-radius:3px;font-size:11px;line-height:17px;margin-left:4px;vertical-align:1px}
+.tag-gray{background:#f2f3f5;color:#86909c}
+.tag-red{background:#ffece8;color:#f53f3f}
+.tag-orange{background:#fff7e8;color:#ff7d00}
+.tag-blue{background:#e8f3ff;color:#1677ff}
+.tag-green{background:#e8ffea;color:#00b42a}
+
+/* ---------- buttons ---------- */
+.btn{height:30px;padding:0 14px;border-radius:4px;border:1px solid #e5e6eb;background:#fff;color:#1d2129;font-size:13px;transition:.15s}
+.btn:hover{border-color:#1677ff;color:#1677ff}
+.btn-primary{background:#1677ff;border-color:#1677ff;color:#fff}
+.btn-primary:hover{background:#4096ff;border-color:#4096ff;color:#fff}
+.btn-primary:disabled{background:#94bfff;border-color:#94bfff;color:#fff;cursor:not-allowed}
+.btn-text{border:none;background:none;color:#1677ff;font-size:13px;height:auto;padding:0 3px}
+.btn-text:hover{text-decoration:underline}
+.btn-sm{height:26px;padding:0 10px;font-size:12px}
+
+/* ---------- filter ---------- */
+.filter{display:flex;gap:10px;align-items:center;padding:12px 16px;border-bottom:1px solid #e5e6eb;flex-wrap:wrap}
+.filter input,.filter select{height:30px;border:1px solid #e5e6eb;border-radius:4px;padding:0 10px;font-size:13px;font-family:inherit;outline:none;background:#fff}
+.filter input{width:200px}
+.filter input:focus,.filter select:focus{border-color:#1677ff}
+.filter .sp{flex:1}
+.filter-label{color:#4e5969;font-size:13px;white-space:nowrap}
+.table-wrap{overflow-x:auto}
+.table-wrap table{min-width:1380px}
+.mono{font-family:Consolas,Menlo,Monaco,monospace;font-size:12px;letter-spacing:-.2px}
+
+/* ---------- summary bar ---------- */
+.sync-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;background:#fff7e8;border:1px solid #ffd591;border-radius:6px;padding:10px 14px;margin:16px}
+.sync-bar .txt{color:#ad4e00;font-size:13px}
+.sync-bar.ok-bar{background:#e8ffea;border-color:#aff0b5}
+.sync-bar.ok-bar .txt{color:#00701a}
+
+/* ---------- detail ---------- */
+.meta{display:flex;flex-wrap:wrap;gap:10px 36px;padding:16px 16px 0}
+.meta .item{font-size:13px;color:#86909c}
+.meta .item b{color:#1d2129;font-weight:500;margin-left:6px}
+.panel{padding:0 16px 16px}
+
+/* ---------- modal ---------- */
+.mask{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:50;padding:24px}
+.modal{width:640px;max-width:100%;max-height:88vh;background:#fff;border-radius:8px;display:flex;flex-direction:column;overflow:hidden}
+.modal-head{padding:15px 20px;border-bottom:1px solid #e5e6eb;font-size:15px;font-weight:600;display:flex;justify-content:space-between;align-items:center}
+.modal-head .oid{font-size:12px;font-weight:400;color:#86909c;margin-left:8px}
+.modal-body{padding:16px 20px;overflow:auto}
+.modal-foot{padding:12px 20px;border-top:1px solid #e5e6eb;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.close{cursor:pointer;color:#86909c;font-size:20px;line-height:1;padding:2px 6px;border-radius:4px}
+.close:hover{background:#f2f3f5}
+
+/* ---------- push list ---------- */
+.push-item{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:1px solid #e5e6eb;border-radius:6px;margin-bottom:8px;cursor:pointer;transition:.15s}
+.push-item:hover{border-color:#94bfff}
+.push-item.checked{border-color:#1677ff;background:#f5f9ff}
+.push-item input{margin-top:3px;cursor:pointer}
+.pi-main{flex:1;min-width:0}
+.pi-title{font-weight:500}
+.pi-sub{color:#86909c;font-size:12px;margin-top:3px;line-height:1.5}
+.risk{color:#ff7d00;font-size:12px;margin-top:5px}
+.hint{background:#f7f8fa;border-radius:4px;padding:8px 10px;color:#4e5969;font-size:12px;margin-top:10px;line-height:1.6}
+
+/* ---------- form ---------- */
+.form-row{margin-top:14px}
+.form-label{font-size:13px;color:#4e5969;margin-bottom:6px}
+.form-label .req{color:#f53f3f}
+select,textarea,input[type=text]{width:100%;border:1px solid #e5e6eb;border-radius:4px;padding:7px 10px;font-size:13px;font-family:inherit;color:#1d2129;outline:none;background:#fff}
+select:focus,textarea:focus{border-color:#1677ff}
+textarea{resize:vertical;min-height:64px}
+
+/* ---------- drawer ---------- */
+.drawer-mask{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:60}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:470px;max-width:92vw;background:#fff;z-index:61;display:flex;flex-direction:column;box-shadow:-4px 0 16px rgba(0,0,0,.12)}
+.drawer-head{padding:15px 20px;border-bottom:1px solid #e5e6eb;display:flex;justify-content:space-between;align-items:center;font-weight:600;font-size:15px}
+.drawer-body{padding:16px 20px;overflow:auto;flex:1}
+.kv{display:grid;grid-template-columns:96px 1fr;gap:9px 12px;font-size:13px;margin-bottom:16px}
+.kv .k{color:#86909c}
+pre{background:#f7f8fa;border:1px solid #e5e6eb;border-radius:4px;padding:12px;font-size:12px;line-height:1.65;overflow:auto;font-family:Consolas,Monaco,"Courier New",monospace;white-space:pre-wrap;word-break:break-all}
+.sec-title{font-size:12px;color:#86909c;margin:0 0 8px;letter-spacing:.3px}
+
+/* ---------- toast ---------- */
+.toast-wrap{position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:99;display:flex;flex-direction:column;gap:8px;align-items:center;pointer-events:none}
+.toast{background:#fff;border:1px solid #e5e6eb;box-shadow:0 6px 18px rgba(0,0,0,.14);border-radius:6px;padding:10px 18px;font-size:13px;display:flex;gap:8px;align-items:center;animation:slide .22s ease-out;max-width:90vw}
+@keyframes slide{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:none}}
+
+/* ---------- misc ---------- */
+.empty{padding:56px 20px;text-align:center;color:#86909c}
+.empty .big{font-size:26px;margin-bottom:8px;opacity:.5}
+.hidden{display:none!important}
+h3{font-size:13px;margin:18px 0 8px;color:#1d2129}
+h3:first-child{margin-top:0}
+.spec-list{padding-left:18px;color:#4e5969;line-height:1.9;font-size:13px}
+.spec-list li{margin-bottom:2px}
+.note{color:#86909c;font-size:12px;line-height:1.7}
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- ============ sidebar ============ -->
+  <aside class="sidebar">
+    <div class="logo"><span class="dot"></span>履约中台</div>
+    <nav class="nav">
+      <div class="nav-parent">齿科服务<span class="chev">▾</span></div>
+      <div class="nav-item active nav-sub" id="nav-sync" data-act="list">
+        <span>异常订单</span><span class="badge" id="nav-badge">3</span>
+      </div>
+    </nav>
+  </aside>
+
+  <!-- ============ main ============ -->
+  <div class="main">
+    <header class="topbar">
+      <div class="crumb" id="crumb">齿科服务 / <b>异常订单</b></div>
+      <div class="top-actions">
+        <button class="btn btn-sm" data-act="spec">设计说明</button>
+        <button class="btn btn-sm" data-act="reset">重置演示数据</button>
+        <span class="muted">运营 · 张琳</span>
+      </div>
+    </header>
+
+    <div class="content">
+      <!-- ---------- 列表 ---------- -->
+      <section id="view-list">
+        <div class="card">
+          <div class="card-head">
+            <div class="card-title">异常订单</div>
+            <div class="muted">接口监控告警自动进入 · 仅展示未同步成功的可推送订单状态</div>
+          </div>
+          <div class="filter">
+            <span class="filter-label">订单号：</span>
+            <input id="q" placeholder="业务公司单号 / 壹账通单号 / 服务商单号">
+            <select id="fp">
+              <option value="">全部业务公司</option>
+              <option value="华夏银行">华夏银行</option>
+              <option value="招商银行">招商银行</option>
+              <option value="平安银行">平安银行</option>
+            </select>
+            <div class="sp"></div>
+            <span class="muted">共 <b id="sync-count">0</b> 笔待处理</span>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th style="width:132px">壹账通单号</th>
+                  <th style="width:92px">业务公司</th>
+                  <th style="width:142px">业务公司单号</th>
+                  <th style="width:92px">服务商</th>
+                  <th style="width:142px">服务商单号</th>
+                  <th style="width:92px">预约门店</th>
+                  <th style="width:104px">最新订单状态</th>
+                  <th style="width:150px">最早未成功订单状态</th>
+                  <th style="width:76px">未成功条数</th>
+                  <th>最近失败原因</th>
+                  <th style="width:96px">失败时间</th>
+                  <th style="width:96px">操作</th>
+                </tr>
+              </thead>
+              <tbody id="list-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ---------- 详情 ---------- -->
+      <section id="view-detail" class="hidden">
+        <div class="card">
+          <div class="card-head">
+            <div class="card-title" id="d-title">订单流转记录</div>
+            <div><span class="link" data-act="list">← 返回异常订单</span></div>
+          </div>
+          <div class="meta" id="d-meta"></div>
+          <div class="sync-bar" id="d-bar" style="margin:16px"></div>
+          <div class="panel">
+            <table>
+              <thead>
+                <tr>
+                  <th style="width:48px">序号</th>
+                  <th style="width:150px">订单状态</th>
+                  <th>预约门店</th>
+                  <th style="width:120px">预约时间</th>
+                  <th style="width:130px">状态变更时间</th>
+                  <th style="width:190px">推送结果</th>
+                  <th style="width:110px">推送时间</th>
+                  <th style="width:150px">操作</th>
+                </tr>
+              </thead>
+              <tbody id="d-body"></tbody>
+            </table>
+            <div class="note" style="margin-top:12px">
+              说明：待确认、取消审核中为内部订单状态，不推送业务公司，显示为「—」；推送结果仅区分成功与失败，请求超时或无回执均按失败处理。
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 补推弹窗 ============ -->
+<div class="mask hidden" id="modal-mask">
+  <div class="modal">
+    <div class="modal-head">
+      <div>补推<span class="oid" id="modal-order"></span></div>
+      <span class="close" data-act="close-modal">×</span>
+    </div>
+    <div class="modal-body">
+      <div class="sec-title">选择要推送的订单状态（按序号升序发送）</div>
+      <div id="m-list"></div>
+      <div id="m-hint"></div>
+      <div class="form-row">
+        <div class="form-label">失败原因 <span class="req">*</span></div>
+        <select id="m-reason">
+          <option value="">请选择</option>
+          <option>业务公司接口超时</option>
+          <option>业务公司返回错误</option>
+          <option>数据修正后补推</option>
+          <option>客诉补推</option>
+          <option>其他</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <div class="form-label">备注 <span class="req">*</span></div>
+        <textarea id="m-remark" placeholder="补充说明，例如：工单号、业务公司反馈情况"></textarea>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <div class="muted" id="m-count">已选 0 条</div>
+      <div style="display:flex;gap:10px">
+        <button class="btn" data-act="close-modal">取消</button>
+        <button class="btn btn-primary" id="m-submit" data-act="confirm" disabled>确认推送</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 报文抽屉 ============ -->
+<div id="drawer-host" class="hidden">
+  <div class="drawer-mask"></div>
+  <div class="drawer">
+    <div class="drawer-head">
+      <span id="dr-title">报文详情</span>
+      <span class="close" data-act="close-drawer">×</span>
+    </div>
+    <div class="drawer-body" id="dr-body"></div>
+  </div>
+</div>
+
+<!-- ============ 设计说明 ============ -->
+<div id="spec-host" class="hidden">
+  <div class="drawer-mask"></div>
+  <div class="drawer">
+    <div class="drawer-head">
+      <span>设计说明</span>
+      <span class="close" data-act="close-spec">×</span>
+    </div>
+    <div class="drawer-body">
+      <h3>核心规则</h3>
+      <ol class="spec-list">
+        <li>补推集合 = 是否推业务公司 且 无明确成功回执</li>
+        <li>待确认、取消审核中为内部订单状态：不推送、不计数</li>
+        <li>按序号升序串行推送，一条失败即停</li>
+        <li>结果两态：成功 / 失败（超时、无回执均按失败处理）</li>
+        <li>默认全选 = 补推全部；只勾一条 = 单推</li>
+        <li>高副作用订单状态只提示、不拦截</li>
+        <li>跳过中间订单状态会提示，但不阻止</li>
+        <li>每次补推必填原因与备注，落审计</li>
+      </ol>
+      <h3>订单状态字典</h3>
+      <div class="note">
+        共 14 个订单状态：2 个内部（待确认、取消审核中）、7 个中间态（已预约、已改期、已到诊、审核驳回、已联系未接通、已联系未预约、已转店）、5 个终态（已取消、已完成、逾期未到店、服务商关单、预约失败）。
+      </div>
+      <h3>不在本次范围</h3>
+      <div class="note">重推建单、故障批次、批量重推、任务中心、审批流、回退防护。</div>
+      <h3>待补</h3>
+      <div class="note">订单状态码映射（原型中为示意值）。</div>
+      <h3>操作提示</h3>
+      <div class="note">
+        列表点「补推」或详情点「补推未成功的订单状态」打开弹窗；<br>
+        详情中可点「仅推此条」单独推送；<br>
+        点「查看报文」看字段对照与原始报文。
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast-wrap" id="toasts"></div>
+
+<script>
+/* ================= 数据 ================= */
+const STATUS_CODE = {
+  '待确认':'','已预约':'BOOKED','已改期':'RESCHEDULED','已到诊':'ARRIVED',
+  '已取消':'CANCELLED','已完成':'COMPLETED','取消审核中':'','审核驳回':'REJECTED',
+  '逾期未到店':'NO_SHOW','已转店':'TRANSFERRED','服务商关单':'CLOSED',
+  '已联系未接通':'CONTACT_FAILED','已联系未预约':'CONTACT_NO_BOOK','预约失败':'BOOK_FAILED'
+};
+const STORE_CODE = {'朝阳门店':'ST001','海淀门店':'ST002','望京门店':'ST003'};
+const RISK = {
+  '已取消':'可能触发业务公司退款',
+  '服务商关单':'可能触发退款或结算',
+  '审核驳回':'将撤回此前的取消申请，可能重复通知',
+  '已改期':'将携带快照中的新预约时间'
+};
+
+const SEED = [
+  {
+    id:'DD20261116001', partner:'华夏银行', supplier:'康护到家', partnerOrderNo:'HX202611160088', supplierOrderNo:'KH202611160001',
+    records:[
+      {seq:1,status:'待确认',store:'朝阳门店',appoint:'—',changed:'11-16 09:50',push:false,result:'internal'},
+      {seq:2,status:'已预约',store:'朝阳门店',appoint:'11-18 14:00',changed:'11-16 10:00',push:true,result:'success',pushTime:'11-16 10:00'},
+      {seq:3,status:'已改期',store:'朝阳门店',appoint:'11-19 10:00',changed:'11-16 11:20',push:true,result:'success',pushTime:'11-16 11:20'},
+      {seq:4,status:'已转店',store:'海淀门店',appoint:'11-19 10:00',changed:'11-16 13:10',push:true,result:'success',pushTime:'11-16 13:10'},
+      {seq:5,status:'已到诊',store:'海淀门店',appoint:'11-19 10:00',changed:'11-16 14:05',push:true,result:'fail',err:'业务公司返回 500：预约门店编码 ST002 不存在',pushTime:'11-16 14:05'},
+      {seq:6,status:'已完成',store:'海淀门店',appoint:'—',changed:'11-16 15:30',push:true,result:'fail',err:'请求超时（15s）',pushTime:'11-16 15:30'}
+    ]
+  },
+  {
+    id:'DD20261116002', partner:'招商银行', supplier:'安康护理', partnerOrderNo:'ZS202611160231', supplierOrderNo:'AK202611160002',
+    records:[
+      {seq:1,status:'待确认',store:'朝阳门店',appoint:'—',changed:'11-16 09:20',push:false,result:'internal'},
+      {seq:2,status:'已预约',store:'朝阳门店',appoint:'11-17 09:00',changed:'11-16 09:30',push:true,result:'success',pushTime:'11-16 09:30'},
+      {seq:3,status:'已取消',store:'朝阳门店',appoint:'—',changed:'11-16 14:20',push:true,result:'fail',err:'业务公司返回 500：订单状态非法',pushTime:'11-16 14:20'}
+    ]
+  },
+  {
+    id:'DD20261116003', partner:'平安银行', supplier:'颐养健康', partnerOrderNo:'PA202611160517', supplierOrderNo:'YY202611160003',
+    records:[
+      {seq:1,status:'待确认',store:'望京门店',appoint:'—',changed:'11-16 08:40',push:false,result:'internal'},
+      {seq:2,status:'已预约',store:'望京门店',appoint:'11-20 15:00',changed:'11-16 09:00',push:true,result:'success',pushTime:'11-16 09:00'},
+      {seq:3,status:'已联系未接通',store:'望京门店',appoint:'11-20 15:00',changed:'11-16 10:10',push:true,result:'fail',err:'请求超时（15s）',pushTime:'11-16 10:10'},
+      {seq:4,status:'已联系未预约',store:'望京门店',appoint:'11-20 15:00',changed:'11-16 11:00',push:true,result:'fail',err:'未发起推送（无回执）'},
+      {seq:5,status:'预约失败',store:'望京门店',appoint:'—',changed:'11-16 16:10',push:true,result:'fail',err:'业务公司返回 500：服务暂时不可用',pushTime:'11-16 16:10'}
+    ]
+  }
+];
+
+let orders = JSON.parse(JSON.stringify(SEED));
+let currentId = null;
+let modalSeqs = [];
+
+/* ================= 工具 ================= */
+const $ = id => document.getElementById(id);
+const clone = o => JSON.parse(JSON.stringify(o));
+function failedOf(o){ return o.records.filter(r => r.push && r.result !== 'success'); }
+function latestOf(o){ return o.records[o.records.length - 1]; }
+function nowStr(){
+  const d = new Date();
+  const p = n => String(n).padStart(2, '0');
+  return '11-16 ' + p(d.getHours()) + ':' + p(d.getMinutes());
+}
+function toast(msg, type){
+  const colors = {ok:'#00b42a', err:'#f53f3f', info:'#1677ff'};
+  const icons = {ok:'✅', err:'❌', info:'ℹ️'};
+  const el = document.createElement('div');
+  el.className = 'toast';
+  el.innerHTML = '<span>' + (icons[type] || '') + '</span><span>' + msg + '</span>';
+  el.style.borderLeft = '3px solid ' + (colors[type] || '#1677ff');
+  $('toasts').appendChild(el);
+  setTimeout(() => { el.style.opacity = '0'; el.style.transition = '.3s'; setTimeout(() => el.remove(), 320); }, 2600);
+}
+
+/* ================= 列表 ================= */
+function renderList(){
+  const q = ($('q').value || '').trim().toLowerCase();
+  const p = $('fp').value;
+  const rows = orders.filter(o => {
+    if (failedOf(o).length === 0) return false;
+    if (p && o.partner !== p) return false;
+    if (q){
+      const hit = o.id.toLowerCase().includes(q) ||
+                  o.partnerOrderNo.toLowerCase().includes(q) ||
+                  o.supplierOrderNo.toLowerCase().includes(q);
+      if (!hit) return false;
+    }
+    return true;
+  });
+
+  $('sync-count').textContent = rows.length;
+  $('nav-badge').textContent = rows.length;
+  $('nav-badge').style.display = rows.length ? '' : 'none';
+
+  const body = $('list-body');
+  if (!rows.length){
+    body.innerHTML = '<tr><td colspan="12"><div class="empty"><div class="big">✓</div>暂无异常订单</div></td></tr>';
+    return;
+  }
+
+  body.innerHTML = rows.map(o => {
+    const f = failedOf(o), first = f[0], last = f[f.length - 1], latest = latestOf(o);
+    return '<tr>' +
+      '<td><span class="link" data-act="detail" data-id="' + o.id + '">' + o.id + '</span></td>' +
+      '<td>' + o.partner + '</td>' +
+      '<td class="mono">' + o.partnerOrderNo + '</td>' +
+      '<td>' + o.supplier + '</td>' +
+      '<td class="mono">' + o.supplierOrderNo + '</td>' +
+      '<td>' + latest.store + '</td>' +
+      '<td>' + latest.status + '</td>' +
+      '<td>序号 ' + first.seq + ' ' + first.status + '</td>' +
+      '<td><b style="color:#f53f3f">' + f.length + '</b> 条</td>' +
+      '<td>' + (last.err || '—') + '</td>' +
+      '<td class="muted">' + last.changed + '</td>' +
+      '<td><span class="link" data-act="detail" data-id="' + o.id + '">查看</span> ' +
+          '<span class="link" data-act="push" data-id="' + o.id + '">补推</span></td>' +
+    '</tr>';
+  }).join('');
+}
+
+/* ================= 详情 ================= */
+function openDetail(id){
+  currentId = id;
+  renderDetail();
+  $('view-list').classList.add('hidden');
+  $('view-detail').classList.remove('hidden');
+  $('crumb').innerHTML = '齿科服务 / 异常订单 / <b>' + id + '</b>';
+  window.scrollTo(0, 0);
+}
+function goList(){
+  $('view-detail').classList.add('hidden');
+  $('view-list').classList.remove('hidden');
+  $('crumb').innerHTML = '齿科服务 / <b>异常订单</b>';
+  renderList();
+}
+
+function renderDetail(){
+  const o = orders.find(x => x.id === currentId);
+  if (!o) return;
+  const f = failedOf(o), latest = latestOf(o);
+
+  $('d-title').textContent = '订单流转记录 · ' + o.id;
+  $('d-meta').innerHTML =
+    '<div class="item">壹账通单号<b>' + o.id + '</b></div>' +
+    '<div class="item">业务公司<b>' + o.partner + '</b></div>' +
+    '<div class="item">业务公司单号<b>' + o.partnerOrderNo + '</b></div>' +
+    '<div class="item">服务商<b>' + o.supplier + '</b></div>' +
+    '<div class="item">服务商单号<b>' + o.supplierOrderNo + '</b></div>' +
+    '<div class="item">当前预约门店<b>' + latest.store + '</b></div>' +
+    '<div class="item">最新订单状态<b>' + latest.status + '</b></div>' +
+    '<div class="item">最后更新<b>' + latest.changed + '</b></div>';
+
+  const bar = $('d-bar');
+  if (f.length){
+    bar.className = 'sync-bar';
+    bar.innerHTML = '<div class="txt">⚠️ 未成功 <b>' + f.length + '</b> 条（序号 ' +
+      f.map(x => x.seq).join('、') + '）</div>' +
+      '<div><button class="btn btn-primary" data-act="push" data-id="' + o.id + '">补推未成功的订单状态</button></div>';
+  } else {
+    bar.className = 'sync-bar ok-bar';
+    bar.innerHTML = '<div class="txt">✅ 所有可推送订单状态均已同步成功</div><div></div>';
+  }
+
+  $('d-body').innerHTML = clone(o.records).reverse().map(recordRow).join('');
+}
+
+function recordRow(r){
+  const internal = !r.push;
+  let result = '', action = '';
+
+  if (internal){
+    result = '<span class="muted">—</span><span class="tag tag-gray">仅内部</span>';
+  } else if (r.result === 'success'){
+    result = '<span class="ok">✅ 成功</span>';
+  } else {
+    result = '<span class="err">❌ 失败</span><div class="sub-err">' + (r.err || '未获取到成功回执') + '</div>';
+  }
+
+  const risk = (!internal && r.result !== 'success' && RISK[r.status])
+    ? '<div class="risk">⚠️ ' + RISK[r.status] + '</div>' : '';
+
+  action = '<span class="link" data-act="drawer" data-seq="' + r.seq + '">查看报文</span>';
+  if (!internal && r.result !== 'success'){
+    action += ' <span class="link" data-act="push" data-id="' + currentId + '" data-seq="' + r.seq + '">仅推此条</span>';
+  }
+
+  const style = internal ? ' style="background:#fafafa"' : '';
+  return '<tr' + style + '>' +
+    '<td class="muted">' + r.seq + '</td>' +
+    '<td>' + (internal ? '<span class="muted">' : '<b style="font-weight:500">') + r.status + (internal ? '</span>' : '</b>') + risk + '</td>' +
+    '<td>' + r.store + '</td>' +
+    '<td class="muted">' + r.appoint + '</td>' +
+    '<td class="muted">' + r.changed + '</td>' +
+    '<td>' + result + '</td>' +
+    '<td class="muted">' + (r.pushTime || '—') + '</td>' +
+    '<td>' + action + '</td>' +
+  '</tr>';
+}
+
+/* ================= 补推弹窗 ================= */
+function openModal(id, onlySeq){
+  currentId = id;
+  const o = orders.find(x => x.id === id);
+  const f = failedOf(o);
+  modalSeqs = onlySeq ? [onlySeq] : f.map(r => r.seq);
+
+  $('modal-order').textContent = o.id + ' · ' + o.partner;
+  $('m-reason').value = '';
+  $('m-remark').value = '';
+  renderModalList();
+  $('modal-mask').classList.remove('hidden');
+}
+
+function renderModalList(){
+  const o = orders.find(x => x.id === currentId);
+  const f = failedOf(o);
+  const total = f.length;
+
+  $('m-list').innerHTML = f.map(r => {
+    const checked = modalSeqs.includes(r.seq);
+    const risk = RISK[r.status] ? '<div class="risk">⚠️ ' + RISK[r.status] + '</div>' : '';
+    let last = '';
+    last = '<span class="err">失败：' + (r.err || '未获取到成功回执') + '</span>';
+
+    return '<label class="push-item ' + (checked ? 'checked' : '') + '">' +
+      '<input type="checkbox" data-seq="' + r.seq + '" ' + (checked ? 'checked' : '') + '>' +
+      '<div class="pi-main">' +
+        '<div class="pi-title">序号 ' + r.seq + ' · ' + r.status + '</div>' +
+        '<div class="pi-sub">' + r.store + ' ｜ 变更 ' + r.changed + ' ｜ 上次：' + last + '</div>' +
+        risk +
+      '</div>' +
+    '</label>';
+  }).join('');
+
+  const skipped = total - modalSeqs.length;
+  $('m-hint').innerHTML = (skipped > 0 && modalSeqs.length > 0)
+    ? '<div class="hint">已跳过 ' + skipped + ' 条未成功记录，业务公司可能因订单状态不连续而拒绝，建议按序推送。</div>'
+    : '';
+
+  updateCount();
+}
+
+function toggleSeq(seq, on){
+  if (on){ if (!modalSeqs.includes(seq)) modalSeqs.push(seq); }
+  else { modalSeqs = modalSeqs.filter(s => s !== seq); }
+  renderModalList();
+}
+
+function updateCount(){
+  const n = modalSeqs.length;
+  $('m-count').textContent = '已选 ' + n + ' 条 · 按序号升序推送';
+  validateModal();
+}
+function validateModal(){
+  const ok = modalSeqs.length > 0 &&
+             $('m-reason').value !== '' &&
+             $('m-remark').value.trim().length >= 2;
+  $('m-submit').disabled = !ok;
+}
+function closeModal(){
+  $('modal-mask').classList.add('hidden');
+  modalSeqs = [];
+}
+
+function confirmPush(){
+  const o = orders.find(x => x.id === currentId);
+  const seqs = modalSeqs.slice().sort((a, b) => a - b);
+  seqs.forEach(seq => {
+    const r = o.records.find(x => x.seq === seq);
+    if (r){ r.result = 'success'; r.err = ''; r.pushTime = nowStr(); }
+  });
+  const n = seqs.length;
+  closeModal();
+  toast('已提交，正在按序号升序推送 ' + n + ' 条…', 'info');
+
+  setTimeout(() => {
+    toast('补推完成：' + n + ' 条推送成功', 'ok');
+    if (orders.some(x => x.id === currentId)) renderDetail();
+    renderList();
+    if (failedOf(o).length === 0){
+      setTimeout(() => toast('该订单已无未成功的订单状态，移出异常订单列表', 'info'), 700);
+    }
+  }, 1200);
+}
+
+/* ================= 报文抽屉 ================= */
+function openDrawer(seq){
+  const o = orders.find(x => x.id === currentId);
+  const r = o.records.find(x => x.seq === seq);
+  if (!r) return;
+
+  const payload = {
+    orderNo: o.id,
+    partnerOrderNo: o.partnerOrderNo,
+    seq: r.seq,
+    statusCode: STATUS_CODE[r.status] || '',
+    statusName: r.status,
+    storeCode: STORE_CODE[r.store] || '',
+    storeName: r.store,
+    appointmentTime: r.appoint === '—' ? '' : '2026-' + r.appoint.replace(' ', ' ') + ':00',
+    changeTime: '2026-' + r.changed + ':00',
+    retryFlag: true,
+    retryReason: 'MANUAL'
+  };
+
+  $('dr-title').textContent = '报文详情 · 序号 ' + r.seq + ' ' + r.status;
+  $('dr-body').innerHTML =
+    '<div class="kv">' +
+      '<div class="k">状态变更时间</div><div>' + r.changed + '</div>' +
+      '<div class="k">推送时间</div><div>' + (r.pushTime || '—') + '</div>' +
+      '<div class="k">失败原因</div><div>' + (r.err || '—') + '</div>' +
+    '</div>' +
+    '<div class="sec-title">推送报文快照</div>' +
+    '<pre>' + JSON.stringify(payload, null, 2) + '</pre>';
+
+  $('drawer-host').classList.remove('hidden');
+}
+function closeDrawer(){ $('drawer-host').classList.add('hidden'); }
+
+/* ================= 设计说明 ================= */
+function openSpec(){ $('spec-host').classList.remove('hidden'); }
+function closeSpec(){ $('spec-host').classList.add('hidden'); }
+
+/* ================= 其他 ================= */
+function resetData(){
+  orders = clone(SEED);
+  currentId = null;
+  modalSeqs = [];
+  goList();
+  toast('演示数据已重置', 'info');
+}
+
+document.addEventListener('keydown', function(e){
+  if (e.key === 'Escape'){ closeModal(); closeDrawer(); closeSpec(); }
+});
+
+/* ================= 事件委托 ================= */
+document.addEventListener('click', function(e){
+  var t = e.target;
+  if (t.classList && t.classList.contains('mask')){ closeModal(); return; }
+  if (t.classList && t.classList.contains('drawer-mask')){ closeDrawer(); closeSpec(); return; }
+
+  var el = t;
+  while (el && el !== document && !(el.getAttribute && el.getAttribute('data-act'))){
+    el = el.parentElement;
+  }
+  if (!el || !el.getAttribute) return;
+
+  var act = el.getAttribute('data-act');
+  var id = el.getAttribute('data-id');
+  var seqRaw = el.getAttribute('data-seq');
+  var seq = (seqRaw === null || seqRaw === '') ? undefined : Number(seqRaw);
+
+  if (act === 'list') goList();
+  else if (act === 'detail') openDetail(id);
+  else if (act === 'push') openModal(id, seq);
+  else if (act === 'drawer') openDrawer(seq);
+  else if (act === 'confirm') confirmPush();
+  else if (act === 'close-modal') closeModal();
+  else if (act === 'close-drawer') closeDrawer();
+  else if (act === 'spec') openSpec();
+  else if (act === 'close-spec') closeSpec();
+  else if (act === 'reset') resetData();
+});
+
+document.addEventListener('input', function(e){
+  if (e.target.id === 'q') renderList();
+  else if (e.target.id === 'm-remark') validateModal();
+});
+
+document.addEventListener('change', function(e){
+  if (e.target.id === 'fp') renderList();
+  else if (e.target.id === 'm-reason') validateModal();
+  else if (e.target.type === 'checkbox' && e.target.getAttribute('data-seq') !== null){
+    toggleSeq(Number(e.target.getAttribute('data-seq')), e.target.checked);
+  }
+});
+
+/* ================= 启动 ================= */
+renderList();
+(function route(){
+  const h = decodeURIComponent(location.hash || '');
+  const push = h.match(/^#push=(.+)$/);
+  const detail = h.match(/^#order=(.+)$/);
+  if (push){ openDetail(push[1]); openModal(push[1]); }
+  else if (detail){ openDetail(detail[1]); }
+})();
+</script>
+</body>
+</html>
