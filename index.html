@@ -70,15 +70,25 @@ tbody tr:hover{background:#fafbfc}
 .btn-sm{height:26px;padding:0 10px;font-size:12px}
 
 /* ---------- filter ---------- */
-.filter{display:flex;gap:10px;align-items:center;padding:12px 16px;border-bottom:1px solid #e5e6eb;flex-wrap:wrap}
-.filter input,.filter select{height:30px;border:1px solid #e5e6eb;border-radius:4px;padding:0 10px;font-size:13px;font-family:inherit;outline:none;background:#fff}
-.filter input{width:200px}
-.filter input:focus,.filter select:focus{border-color:#1677ff}
+.filter{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center;padding:14px 16px;border-bottom:1px solid #e5e6eb}
+.f-item{display:flex;align-items:center;gap:6px}
+.f-item>label{color:#4e5969;font-size:13px;white-space:nowrap}
+.filter .f-item input,.filter .f-item select{height:32px;border:1px solid #e5e6eb;border-radius:4px;padding:0 8px;font-size:13px;font-family:inherit;outline:none;background:#fff;color:#1d2129;width:auto}
+.filter .f-item input:focus,.filter .f-item select:focus{border-color:#1677ff;box-shadow:0 0 0 2px rgba(22,119,255,.1)}
+.filter .f-item input.idno{width:220px}
+.filter .f-item input.name{width:96px}
+.filter .f-item input.phone{width:126px}
+.filter .f-item input.date{width:136px}
+.filter .f-item select{width:112px}
+.f-item .tilde{color:#86909c;font-size:12px}
 .filter .sp{flex:1}
-.filter-label{color:#4e5969;font-size:13px;white-space:nowrap}
-.filter input.name{width:96px}
-.filter input.phone{width:126px}
-.filter input.date{width:138px}
+.link-btn{background:none;border:none;color:#1677ff;font-size:13px;font-family:inherit;padding:5px 7px;cursor:pointer;border-radius:4px}
+.link-btn:hover{background:#e8f3ff}
+.op-cell{white-space:nowrap}
+.table-wrap th:last-child,
+.table-wrap td:last-child{position:sticky;right:0;background:#fff;box-shadow:-8px 0 8px -8px rgba(0,0,0,.18);z-index:2}
+.table-wrap th:last-child{background:#f7f8fa;z-index:3}
+.table-wrap tbody tr:hover td:last-child{background:#fafbfc}
 .table-wrap{overflow-x:auto}
 .table-wrap table{min-width:1660px}
 .mono{font-family:Consolas,Menlo,Monaco,monospace;font-size:12px;letter-spacing:-.2px}
@@ -183,22 +193,32 @@ h3:first-child{margin-top:0}
             <div class="muted">接口监控告警自动进入 · 仅展示未同步成功的可推送订单状态</div>
           </div>
           <div class="filter">
-            <span class="filter-label">订单编号</span>
-            <input id="q" placeholder="壹账通 / 业务公司 / 服务商单号">
-            <span class="filter-label">服务商</span>
-            <select id="fs">
-              <option value="">全部</option>
-              <option value="康恩斯瑞">康恩斯瑞</option>
-              <option value="瑞尔">瑞尔</option>
-            </select>
-            <span class="filter-label">预约人姓名</span>
-            <input id="fname" class="name" placeholder="姓名">
-            <span class="filter-label">手机号</span>
-            <input id="fphone" class="phone" placeholder="手机号">
-            <span class="filter-label">下单时间</span>
-            <input id="fstart" class="date" type="date">
-            <span class="muted">至</span>
-            <input id="fend" class="date" type="date">
+            <div class="f-item">
+              <label for="q">订单编号</label>
+              <input id="q" class="idno" placeholder="壹账通 / 业务公司 / 服务商单号">
+            </div>
+            <div class="f-item">
+              <label for="fs">服务商</label>
+              <select id="fs">
+                <option value="">全部</option>
+                <option value="康恩斯瑞">康恩斯瑞</option>
+                <option value="瑞尔">瑞尔</option>
+              </select>
+            </div>
+            <div class="f-item">
+              <label for="fname">预约人姓名</label>
+              <input id="fname" class="name" placeholder="姓名">
+            </div>
+            <div class="f-item">
+              <label for="fphone">手机号</label>
+              <input id="fphone" class="phone" placeholder="手机号">
+            </div>
+            <div class="f-item">
+              <label>下单时间</label>
+              <input id="fstart" class="date" type="date">
+              <span class="tilde">至</span>
+              <input id="fend" class="date" type="date">
+            </div>
             <div class="sp"></div>
             <span class="muted">共 <b id="sync-count">0</b> 笔待处理</span>
           </div>
@@ -219,7 +239,7 @@ h3:first-child{margin-top:0}
                   <th style="width:76px">未成功条数</th>
                   <th>最近失败原因</th>
                   <th style="width:96px">失败时间</th>
-                  <th style="width:96px">操作</th>
+                  <th style="width:112px">操作</th>
                 </tr>
               </thead>
               <tbody id="list-body"></tbody>
@@ -487,8 +507,8 @@ function renderList(){
       '<td><b style="color:#f53f3f">' + f.length + '</b> 条</td>' +
       '<td>' + (last.err || '—') + '</td>' +
       '<td class="muted">' + last.changed + '</td>' +
-      '<td><span class="link" data-act="detail" data-id="' + o.id + '">查看</span> ' +
-          '<span class="link" data-act="push" data-id="' + o.id + '">补推</span></td>' +
+      '<td class="op-cell"><button type="button" class="link-btn" data-act="detail" data-id="' + o.id + '">查看</button>' +
+          '<button type="button" class="link-btn" data-act="push" data-id="' + o.id + '">补推</button></td>' +
     '</tr>';
   }).join('');
 }
@@ -755,6 +775,16 @@ document.addEventListener('change', function(e){
 });
 
 /* ================= 启动 ================= */
+(function initDateRange(){
+  var days = orders.map(function(o){ return o.createdAt.slice(0, 10); }).sort();
+  var end = days[days.length - 1] || new Date().toISOString().slice(0, 10);
+  var d = new Date(end + 'T00:00:00');
+  d.setMonth(d.getMonth() - 3);
+  var start = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  $('fstart').value = start;
+  $('fend').value = end;
+})();
+
 renderList();
 (function route(){
   const h = decodeURIComponent(location.hash || '');
