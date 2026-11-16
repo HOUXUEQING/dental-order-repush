@@ -102,6 +102,7 @@ tbody tr:hover{background:#fafbfc}
 .table-wrap-sm th:last-child{background:#f7f8fa;z-index:3}
 .table-wrap-sm tbody tr:hover td:last-child{background:#fafbfc}
 .nowrap{white-space:nowrap}
+.detail-foot{display:flex;justify-content:flex-end;margin-top:18px;padding-top:14px;border-top:1px solid #e5e6eb}
 .table-wrap{overflow-x:auto}
 .table-wrap table{min-width:2150px}
 .mono{font-family:Consolas,Menlo,Monaco,monospace;font-size:12px;letter-spacing:-.2px}
@@ -274,7 +275,6 @@ h3:first-child{margin-top:0}
         <div class="card">
           <div class="card-head">
             <div class="card-title" id="d-title">订单流转记录</div>
-            <div><span class="link" data-act="list">← 返回异常订单</span></div>
           </div>
           <div class="meta" id="d-meta"></div>
           <div class="sync-bar" id="d-bar" style="margin:16px"></div>
@@ -300,6 +300,9 @@ h3:first-child{margin-top:0}
             </div>
             <div class="note" style="margin-top:12px">
               说明：待确认、取消审核中为内部订单状态，不推送业务公司，显示为「—」；推送结果仅区分成功与失败，请求超时或无回执均按失败处理。
+            </div>
+            <div class="detail-foot">
+              <button type="button" class="btn" data-act="list">返回</button>
             </div>
           </div>
         </div>
