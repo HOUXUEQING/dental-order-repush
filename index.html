@@ -654,7 +654,6 @@ function recordRow(r){
   if (!internal){
     if (r.retryResult === 'success') retry = '<span class="ok">✅ 成功</span>';
     else if (r.retryResult === 'fail') retry = '<span class="err">❌ 失败</span>';
-    if (r.retryReason) retry += '<div class="muted" style="font-size:12px;margin-top:2px">' + r.retryReason + '</div>';
   }
 
   const risk = (!internal && r.result !== 'success' && r.retryResult !== 'success' && RISK[r.status])
