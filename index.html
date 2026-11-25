@@ -364,7 +364,7 @@ h3:first-child{margin-top:0}
         <li>补推为整体操作，一次补推全部未成功记录，不支持分条补推</li>
         <li>高副作用订单状态只提示、不拦截</li>
         <li>补推成功的订单不再提供补推入口</li>
-        <li>每次补推必填原因与备注，落审计</li>
+        <li>每次补推必填原因与备注，随记录保存并在详情页展示</li>
       </ol>
       <h3>订单状态字典</h3>
       <div class="note">
@@ -414,21 +414,21 @@ const SEED = [
     ]
   },
   {
-    id:'DD20261116002', partner:'招商银行', supplier:'瑞尔', partnerOrderNo:'ZS202611160231', supplierOrderNo:'AK202611160002', patient:'李静', phone:'13998765432', createdAt:'2026-11-15 09:10:05',
+    id:'DD20261116002', partner:'招商银行', supplier:'瑞尔', partnerOrderNo:'ZS202611160231', supplierOrderNo:'AK202611160002', patient:'李静', phone:'13998765432', createdAt:'2026-11-15 09:10:05', lastRetryReason:'业务公司返回错误', lastRetryRemark:'工单 TK20261116012，业务公司返回订单状态非法',
     records:[
       {seq:1,status:'待确认',store:'朝阳门店',appoint:'—',changed:'2026-11-16 09:20:11',push:false,result:'internal'},
       {seq:2,status:'已预约',store:'朝阳门店',appoint:'2026-11-17 09:00:00',changed:'2026-11-16 09:30:02',push:true,result:'success',pushTime:'2026-11-16 09:30:02'},
-      {seq:3,status:'已取消',store:'朝阳门店',appoint:'—',changed:'2026-11-16 14:20:19',push:true,result:'fail',err:'业务公司返回 500：订单状态非法',pushTime:'2026-11-16 14:20:19',retryResult:'fail',retryTime:'2026-11-16 15:10:08'}
+      {seq:3,status:'已取消',store:'朝阳门店',appoint:'—',changed:'2026-11-16 14:20:19',push:true,result:'fail',err:'业务公司返回 500：订单状态非法',pushTime:'2026-11-16 14:20:19',retryResult:'fail',retryTime:'2026-11-16 15:10:08',retryReason:'业务公司返回错误',retryRemark:'工单 TK20261116012，业务公司返回订单状态非法'}
     ]
   },
   {
-    id:'DD20261116003', partner:'平安银行', supplier:'康恩斯瑞', partnerOrderNo:'PA202611160517', supplierOrderNo:'YY202611160003', patient:'王芳', phone:'13600001111', createdAt:'2026-11-16 08:30:44',
+    id:'DD20261116003', partner:'平安银行', supplier:'康恩斯瑞', partnerOrderNo:'PA202611160517', supplierOrderNo:'YY202611160003', patient:'王芳', phone:'13600001111', createdAt:'2026-11-16 08:30:44', lastRetryReason:'业务公司接口超时', lastRetryRemark:'客户来电催办，工单 TK20261116008',
     records:[
       {seq:1,status:'待确认',store:'望京门店',appoint:'—',changed:'2026-11-16 08:40:01',push:false,result:'internal'},
       {seq:2,status:'已预约',store:'望京门店',appoint:'2026-11-20 15:00:00',changed:'2026-11-16 09:00:33',push:true,result:'success',pushTime:'2026-11-16 09:00:33'},
-      {seq:3,status:'已联系未接通',store:'望京门店',appoint:'2026-11-20 15:00:00',changed:'2026-11-16 10:10:15',push:true,result:'fail',err:'请求超时（15s）',pushTime:'2026-11-16 10:10:15',retryResult:'success',retryTime:'2026-11-16 16:20:11'},
-      {seq:4,status:'已联系未预约',store:'望京门店',appoint:'2026-11-20 15:00:00',changed:'2026-11-16 11:00:07',push:true,result:'fail',err:'未发起推送（无回执）',retryResult:'success',retryTime:'2026-11-16 16:20:11'},
-      {seq:5,status:'预约失败',store:'望京门店',appoint:'—',changed:'2026-11-16 16:10:50',push:true,result:'fail',err:'业务公司返回 500：服务暂时不可用',pushTime:'2026-11-16 16:10:50',retryResult:'success',retryTime:'2026-11-16 16:20:11'}
+      {seq:3,status:'已联系未接通',store:'望京门店',appoint:'2026-11-20 15:00:00',changed:'2026-11-16 10:10:15',push:true,result:'fail',err:'请求超时（15s）',pushTime:'2026-11-16 10:10:15',retryResult:'success',retryTime:'2026-11-16 16:20:11',retryReason:'业务公司接口超时',retryRemark:'客户来电催办，工单 TK20261116008'},
+      {seq:4,status:'已联系未预约',store:'望京门店',appoint:'2026-11-20 15:00:00',changed:'2026-11-16 11:00:07',push:true,result:'fail',err:'未发起推送（无回执）',retryResult:'success',retryTime:'2026-11-16 16:20:11',retryReason:'业务公司接口超时',retryRemark:'客户来电催办，工单 TK20261116008'},
+      {seq:5,status:'预约失败',store:'望京门店',appoint:'—',changed:'2026-11-16 16:10:50',push:true,result:'fail',err:'业务公司返回 500：服务暂时不可用',pushTime:'2026-11-16 16:10:50',retryResult:'success',retryTime:'2026-11-16 16:20:11',retryReason:'业务公司接口超时',retryRemark:'客户来电催办，工单 TK20261116008'}
     ]
   }
 ];
@@ -458,9 +458,11 @@ function lastRetryTimeOf(o){
 }
 function retryCell(o){
   const st = retryStatusOf(o);
-  const t = lastRetryTimeOf(o);
   const cls = st === '补推成功' ? 'tag-green' : (st === '补推失败' ? 'tag-red' : 'tag-gray');
-  return '<span class="tag ' + cls + '" style="margin-left:0">' + st + '</span>';
+  const tip = o.lastRetryReason
+    ? ('补推原因：' + o.lastRetryReason + (o.lastRetryRemark ? '；备注：' + o.lastRetryRemark : ''))
+    : '';
+  return '<span class="tag ' + cls + '" style="margin-left:0" title="' + tip + '">' + st + '</span>';
 }
 function latestOf(o){ return o.records[o.records.length - 1]; }
 function maskName(n){
@@ -619,6 +621,8 @@ function renderDetail(){
     '<div class="item">下单时间<b>' + o.createdAt + '</b></div>' +
     '<div class="item">补推结果<b>' + st + '</b></div>' +
     '<div class="item">最近补推时间<b>' + (rt || '—') + '</b></div>' +
+    '<div class="item">补推原因<b>' + (o.lastRetryReason || '—') + '</b></div>' +
+    '<div class="item">补推备注<b>' + (o.lastRetryRemark || '—') + '</b></div>' +
     '<div class="item">最后更新<b>' + latest.changed + '</b></div>';
 
   const bar = $('d-bar');
@@ -650,6 +654,7 @@ function recordRow(r){
   if (!internal){
     if (r.retryResult === 'success') retry = '<span class="ok">✅ 成功</span>';
     else if (r.retryResult === 'fail') retry = '<span class="err">❌ 失败</span>';
+    if (r.retryReason) retry += '<div class="muted" style="font-size:12px;margin-top:2px">' + r.retryReason + '</div>';
   }
 
   const risk = (!internal && r.result !== 'success' && r.retryResult !== 'success' && RISK[r.status])
@@ -722,11 +727,20 @@ function closeModal(){
 
 function confirmPush(){
   const o = orders.find(x => x.id === currentId);
+  const reason = $('m-reason').value;
+  const remark = $('m-remark').value.trim();
   const seqs = modalSeqs.slice().sort((a, b) => a - b);
   seqs.forEach(seq => {
     const r = o.records.find(x => x.seq === seq);
-    if (r){ r.retryResult = 'success'; r.retryTime = nowStr(); }
+    if (r){
+      r.retryResult = 'success';
+      r.retryTime = nowStr();
+      r.retryReason = reason;
+      r.retryRemark = remark;
+    }
   });
+  o.lastRetryReason = reason;
+  o.lastRetryRemark = remark;
   const n = seqs.length;
   closeModal();
   toast('已提交，正在按序号升序推送 ' + n + ' 条…', 'info');
