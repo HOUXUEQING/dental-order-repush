@@ -292,7 +292,6 @@ h3:first-child{margin-top:0}
                   <th style="width:150px">推送时间</th>
                   <th style="width:90px">补推结果</th>
                   <th style="width:150px">补推时间</th>
-                  <th style="width:130px">操作</th>
                 </tr>
               </thead>
               <tbody id="d-body"></tbody>
@@ -319,9 +318,8 @@ h3:first-child{margin-top:0}
       <span class="close" data-act="close-modal">×</span>
     </div>
     <div class="modal-body">
-      <div class="sec-title">选择要推送的订单状态（按序号升序发送）</div>
+      <div class="sec-title">将按序号升序补推以下记录</div>
       <div id="m-list"></div>
-      <div id="m-hint"></div>
       <div class="form-row">
         <div class="form-label">失败原因 <span class="req">*</span></div>
         <select id="m-reason">
@@ -348,18 +346,6 @@ h3:first-child{margin-top:0}
   </div>
 </div>
 
-<!-- ============ 报文抽屉 ============ -->
-<div id="drawer-host" class="hidden">
-  <div class="drawer-mask"></div>
-  <div class="drawer">
-    <div class="drawer-head">
-      <span id="dr-title">报文详情</span>
-      <span class="close" data-act="close-drawer">×</span>
-    </div>
-    <div class="drawer-body" id="dr-body"></div>
-  </div>
-</div>
-
 <!-- ============ 设计说明 ============ -->
 <div id="spec-host" class="hidden">
   <div class="drawer-mask"></div>
@@ -375,9 +361,9 @@ h3:first-child{margin-top:0}
         <li>待确认、取消审核中为内部订单状态：不推送、不计数</li>
         <li>按序号升序串行推送，一条失败即停</li>
         <li>结果两态：成功 / 失败（超时、无回执均按失败处理）</li>
-        <li>默认全选 = 补推全部；只勾一条 = 单推</li>
+        <li>补推为整体操作，一次补推全部未成功记录，不支持分条补推</li>
         <li>高副作用订单状态只提示、不拦截</li>
-        <li>跳过中间订单状态会提示，但不阻止</li>
+        <li>补推成功的订单不再提供补推入口</li>
         <li>每次补推必填原因与备注，落审计</li>
       </ol>
       <h3>订单状态字典</h3>
@@ -390,9 +376,8 @@ h3:first-child{margin-top:0}
       <div class="note">订单状态码映射（原型中为示意值）。</div>
       <h3>操作提示</h3>
       <div class="note">
-        列表点「补推」或详情点「补推未成功的订单状态」打开弹窗；<br>
-        详情中可点「仅推此条」单独推送；<br>
-        点「查看报文」看字段对照与原始报文。
+        列表点「补推」或详情点「补推未成功的订单状态」打开弹窗，一次性补推全部未成功记录；<br>
+        补推成功的订单不显示补推按钮，详情页不再提供单条补推与查看报文入口。
       </div>
     </div>
   </div>
@@ -476,10 +461,6 @@ function retryCell(o){
   const t = lastRetryTimeOf(o);
   const cls = st === '补推成功' ? 'tag-green' : (st === '补推失败' ? 'tag-red' : 'tag-gray');
   return '<span class="tag ' + cls + '" style="margin-left:0">' + st + '</span>';
-}
-function modalListOf(o){
-  const p = pendingOf(o);
-  return p.length ? p : failedOriginal(o);
 }
 function latestOf(o){ return o.records[o.records.length - 1]; }
 function maskName(n){
@@ -595,7 +576,7 @@ function renderList(forceIds){
       '<td>' + retryCell(o) + '</td>' +
       '<td class="muted nowrap">' + (lastRetryTimeOf(o) || '—') + '</td>' +
       '<td class="op-cell"><button type="button" class="link-btn" data-act="detail" data-id="' + o.id + '">查看</button>' +
-          '<button type="button" class="link-btn" data-act="push" data-id="' + o.id + '">补推</button></td>' +
+          (retryStatusOf(o) === '补推成功' ? '' : '<button type="button" class="link-btn" data-act="push" data-id="' + o.id + '">补推</button>') + '</td>' +
     '</tr>';
   }).join('');
 }
@@ -648,8 +629,7 @@ function renderDetail(){
       '<div><button class="btn btn-primary" data-act="push" data-id="' + o.id + '">补推未成功的订单状态</button></div>';
   } else {
     bar.className = 'sync-bar ok-bar';
-    bar.innerHTML = '<div class="txt">✅ 补推成功' + (rt ? '（最近补推 ' + rt + '）' : '') + '，订单保留在列表中</div>' +
-      '<div><button class="btn" data-act="push" data-id="' + o.id + '">再次补推</button></div>';
+    bar.innerHTML = '<div class="txt">✅ 补推成功' + (rt ? '（最近补推 ' + rt + '）' : '') + '，订单保留在列表中</div><div></div>';
   }
 
   $('d-body').innerHTML = clone(o.records).reverse().map(recordRow).join('');
@@ -657,7 +637,7 @@ function renderDetail(){
 
 function recordRow(r){
   const internal = !r.push;
-  let result = '', retry = '<span class="muted">—</span>', action = '';
+  let result = '', retry = '<span class="muted">—</span>';
 
   if (internal){
     result = '<span class="muted">—</span><span class="tag tag-gray">仅内部</span>';
@@ -675,11 +655,6 @@ function recordRow(r){
   const risk = (!internal && r.result !== 'success' && r.retryResult !== 'success' && RISK[r.status])
     ? '<div class="risk">⚠️ ' + RISK[r.status] + '</div>' : '';
 
-  action = '<span class="link" data-act="drawer" data-seq="' + r.seq + '">查看报文</span>';
-  if (!internal && r.result !== 'success'){
-    action += ' <span class="link" data-act="push" data-id="' + currentId + '" data-seq="' + r.seq + '">补推此条</span>';
-  }
-
   const style = internal ? ' style="background:#fafafa"' : '';
   return '<tr' + style + '>' +
     '<td class="muted">' + r.seq + '</td>' +
@@ -691,16 +666,16 @@ function recordRow(r){
     '<td class="muted nowrap">' + (r.pushTime || '—') + '</td>' +
     '<td>' + retry + '</td>' +
     '<td class="muted nowrap">' + (r.retryTime || '—') + '</td>' +
-    '<td>' + action + '</td>' +
   '</tr>';
 }
 
 /* ================= 补推弹窗 ================= */
-function openModal(id, onlySeq){
+function openModal(id){
   currentId = id;
   const o = orders.find(x => x.id === id);
-  const list = modalListOf(o);
-  modalSeqs = onlySeq ? [onlySeq] : list.map(r => r.seq);
+  const list = pendingOf(o);
+  if (!list.length) return;
+  modalSeqs = list.map(r => r.seq);
 
   $('modal-order').textContent = o.id + ' · ' + o.partner;
   $('m-reason').value = '';
@@ -711,43 +686,27 @@ function openModal(id, onlySeq){
 
 function renderModalList(){
   const o = orders.find(x => x.id === currentId);
-  const list = modalListOf(o);
-  const total = list.length;
+  const list = pendingOf(o);
 
   $('m-list').innerHTML = list.map(r => {
-    const checked = modalSeqs.includes(r.seq);
     const risk = RISK[r.status] ? '<div class="risk">⚠️ ' + RISK[r.status] + '</div>' : '';
-    const last = (r.retryResult === 'success')
-      ? '<span class="ok">已补推成功</span>'
-      : '<span class="err">失败：' + (r.err || '未获取到成功回执') + '</span>';
+    const last = '<span class="err">失败：' + (r.err || '未获取到成功回执') + '</span>';
 
-    return '<label class="push-item ' + (checked ? 'checked' : '') + '">' +
-      '<input type="checkbox" data-seq="' + r.seq + '" ' + (checked ? 'checked' : '') + '>' +
+    return '<div class="push-item">' +
       '<div class="pi-main">' +
         '<div class="pi-title">序号 ' + r.seq + ' · ' + r.status + '</div>' +
         '<div class="pi-sub">' + r.store + ' ｜ 变更 ' + r.changed + ' ｜ ' + last + '</div>' +
         risk +
       '</div>' +
-    '</label>';
+    '</div>';
   }).join('');
-
-  const skipped = total - modalSeqs.length;
-  $('m-hint').innerHTML = (skipped > 0 && modalSeqs.length > 0)
-    ? '<div class="hint">已跳过 ' + skipped + ' 条记录，业务公司可能因订单状态不连续而拒绝，建议按序推送。</div>'
-    : '';
 
   updateCount();
 }
 
-function toggleSeq(seq, on){
-  if (on){ if (!modalSeqs.includes(seq)) modalSeqs.push(seq); }
-  else { modalSeqs = modalSeqs.filter(s => s !== seq); }
-  renderModalList();
-}
-
 function updateCount(){
   const n = modalSeqs.length;
-  $('m-count').textContent = '已选 ' + n + ' 条 · 按序号升序推送';
+  $('m-count').textContent = '共 ' + n + ' 条 · 按序号升序推送';
   validateModal();
 }
 function validateModal(){
@@ -779,39 +738,7 @@ function confirmPush(){
   }, 1200);
 }
 
-/* ================= 报文抽屉 ================= */
-function openDrawer(seq){
-  const o = orders.find(x => x.id === currentId);
-  const r = o.records.find(x => x.seq === seq);
-  if (!r) return;
 
-  const payload = {
-    orderNo: o.id,
-    partnerOrderNo: o.partnerOrderNo,
-    seq: r.seq,
-    statusCode: STATUS_CODE[r.status] || '',
-    statusName: r.status,
-    storeCode: STORE_CODE[r.store] || '',
-    storeName: r.store,
-    appointmentTime: r.appoint === '—' ? '' : r.appoint,
-    changeTime: r.changed,
-    retryFlag: true,
-    retryReason: 'MANUAL'
-  };
-
-  $('dr-title').textContent = '报文详情 · 序号 ' + r.seq + ' ' + r.status;
-  $('dr-body').innerHTML =
-    '<div class="kv">' +
-      '<div class="k">状态变更时间</div><div>' + r.changed + '</div>' +
-      '<div class="k">推送时间</div><div>' + (r.pushTime || '—') + '</div>' +
-      '<div class="k">失败原因</div><div>' + (r.err || '—') + '</div>' +
-    '</div>' +
-    '<div class="sec-title">推送报文快照</div>' +
-    '<pre>' + JSON.stringify(payload, null, 2) + '</pre>';
-
-  $('drawer-host').classList.remove('hidden');
-}
-function closeDrawer(){ $('drawer-host').classList.add('hidden'); }
 
 /* ================= 设计说明 ================= */
 function openSpec(){ $('spec-host').classList.remove('hidden'); }
@@ -828,14 +755,14 @@ function resetData(){
 }
 
 document.addEventListener('keydown', function(e){
-  if (e.key === 'Escape'){ closeModal(); closeDrawer(); closeSpec(); }
+  if (e.key === 'Escape'){ closeModal(); closeSpec(); }
 });
 
 /* ================= 事件委托 ================= */
 document.addEventListener('click', function(e){
   var t = e.target;
   if (t.classList && t.classList.contains('mask')){ closeModal(); return; }
-  if (t.classList && t.classList.contains('drawer-mask')){ closeDrawer(); closeSpec(); return; }
+  if (t.classList && t.classList.contains('drawer-mask')){ closeSpec(); return; }
 
   var el = t;
   while (el && el !== document && !(el.getAttribute && el.getAttribute('data-act'))){
@@ -851,11 +778,9 @@ document.addEventListener('click', function(e){
   if (act === 'list') goList();
   else if (act === 'tab'){ currentTab = el.getAttribute('data-tab'); renderList(); }
   else if (act === 'detail') openDetail(id);
-  else if (act === 'push') openModal(id, seq);
-  else if (act === 'drawer') openDrawer(seq);
+  else if (act === 'push') openModal(id);
   else if (act === 'confirm') confirmPush();
   else if (act === 'close-modal') closeModal();
-  else if (act === 'close-drawer') closeDrawer();
   else if (act === 'spec') openSpec();
   else if (act === 'close-spec') closeSpec();
   else if (act === 'reset') resetData();
@@ -869,9 +794,6 @@ document.addEventListener('input', function(e){
 document.addEventListener('change', function(e){
   if (e.target.id === 'fs' || e.target.id === 'fstart' || e.target.id === 'fend') renderList();
   else if (e.target.id === 'm-reason') validateModal();
-  else if (e.target.type === 'checkbox' && e.target.getAttribute('data-seq') !== null){
-    toggleSeq(Number(e.target.getAttribute('data-seq')), e.target.checked);
-  }
 });
 
 /* ================= 启动 ================= */
